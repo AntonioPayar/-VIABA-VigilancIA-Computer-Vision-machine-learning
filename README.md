@@ -4,7 +4,7 @@
 
 ### En este repositorio se almacenará el flujo de trabajo de aplicaciones relacionadas con el área de Data Science principalmente de proyectos de Computer Vision
 
-
+![img](https://theaisummer.com/static/32bde05b2ffccf127b8a89d76dddb57d/eea4a/yolo_app.jpg)
 
 ![GIF en línea](https://miro.medium.com/v2/resize:fit:1384/1*oAdmPo7ZxjkfcmTtOqbw1g.gif)
 
@@ -17,7 +17,7 @@
 ### Se trabajará por ramas dejando así mismo la MAIN lo limpia de contenido sobrante como se pueda
 
 
-![GIF en línea](https://www.nobledesktop.com/image/gitresources/git-branches-merge.png)
+![GIF en línea 2](https://www.nobledesktop.com/image/gitresources/git-branches-merge.png)
 
 ### De tal manera que si un alumno quiere trabajar en una nueva implementación tendrá que crearse una rama independiente para guardar sus cambios hasta la finalización de la tarea
 
