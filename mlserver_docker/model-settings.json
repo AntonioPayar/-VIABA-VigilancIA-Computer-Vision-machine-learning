@@ -1,0 +1,8 @@
+{
+  "name": "object-detection",
+  "implementation": "custom_model.ObjectDetectionModel",
+  "parameters": {
+    "uri": "model.joblib",
+    "version": "v1.0.0"
+  }
+}
