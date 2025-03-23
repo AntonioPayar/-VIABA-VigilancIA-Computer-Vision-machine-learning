@@ -14,9 +14,10 @@ async function guardarPuntos() {
         for (const camera of cameras) {
             alert(`Seleccione el pixel correspondiente a ${esquina.label} de la ${camera.id === 'camera1' ? 'cámara de seguridad' : 'plano desde arriba'}`);
             const punto = await obtenerPunto(document.getElementById(camera.id));
-            console.log(`Coordenadas seleccionadas en ${camera.id}: X=${punto.x}, Y=${punto.y}`);
+            //console.log(`Coordenadas seleccionadas en ${camera.id}: X=${punto.x}, Y=${punto.y}`);
             //alert(`Coordenadas seleccionadas en ${camera.id}: X=${punto.x}, Y=${punto.y}`);
-            document.getElementById(`${camera.prefix}-${esquina.name}`).innerHTML = `(${punto.x}, ${punto.y})`;
+            document.getElementById(`${camera.prefix}-${esquina.name}_x`).innerHTML = `${punto.x}`;
+            document.getElementById(`${camera.prefix}-${esquina.name}_y`).innerHTML = `${punto.y}`;
         }
     }
 }
@@ -77,21 +78,45 @@ function enviarResultados() {
     // Datos que se enviarán en el cuerpo del POST
     const datos = {
         camara1: {
-            esquinaSuperiorIzquierda: document.getElementById('cam1-esquina-superior-izquierda').innerHTML,
-            esquinaSuperiorDerecha: document.getElementById('cam1-esquina-superior-derecha').innerHTML,
-            esquinaInferiorIzquierda: document.getElementById('cam1-esquina-inferior-izquierda').innerHTML,
-            esquinaInferiorDerecha: document.getElementById('cam1-esquina-inferior-derecha').innerHTML
+            esquinaSuperiorIzquierda : {
+                x: document.getElementById('cam1-esquina-superior-izquierda_x').innerHTML,
+                y: document.getElementById('cam1-esquina-superior-izquierda_y').innerHTML
+            },
+            esquinaSuperiorDerecha : {
+                x: document.getElementById('cam1-esquina-superior-derecha_x').innerHTML,
+                y: document.getElementById('cam1-esquina-superior-derecha_y').innerHTML
+            },
+            esquinaInferiorIzquierda : {
+                x: document.getElementById('cam1-esquina-inferior-izquierda_x').innerHTML,
+                y: document.getElementById('cam1-esquina-inferior-izquierda_y').innerHTML
+            },
+            esquinaInferiorDerecha : {
+                x: document.getElementById('cam1-esquina-inferior-derecha_x').innerHTML,
+                y: document.getElementById('cam1-esquina-inferior-derecha_y').innerHTML
+            }
         },
         camara2: {
-            esquinaSuperiorIzquierda: document.getElementById('cam2-esquina-superior-izquierda').innerHTML,
-            esquinaSuperiorDerecha: document.getElementById('cam2-esquina-superior-derecha').innerHTML,
-            esquinaInferiorIzquierda: document.getElementById('cam2-esquina-inferior-izquierda').innerHTML,
-            esquinaInferiorDerecha: document.getElementById('cam2-esquina-inferior-derecha').innerHTML
+            esquinaSuperiorIzquierda : {
+                x: document.getElementById('cam2-esquina-superior-izquierda_x').innerHTML,
+                y: document.getElementById('cam2-esquina-superior-izquierda_y').innerHTML
+            },
+            esquinaSuperiorDerecha : {
+                x: document.getElementById('cam2-esquina-superior-derecha_x').innerHTML,
+                y: document.getElementById('cam2-esquina-superior-derecha_y').innerHTML
+            },
+            esquinaInferiorIzquierda : {
+                x: document.getElementById('cam2-esquina-inferior-izquierda_x').innerHTML,
+                y: document.getElementById('cam2-esquina-inferior-izquierda_y').innerHTML
+            },
+            esquinaInferiorDerecha : {
+                x: document.getElementById('cam2-esquina-inferior-derecha_x').innerHTML,
+                y: document.getElementById('cam2-esquina-inferior-derecha_y').innerHTML
+            }
         }
     };
 
     // URL del endpoint de la API
-    const url = 'https://api.ejemplo.com/endpoint';
+    const url = 'http://localhost:8000/getConfiguration';
 
     // Configuración de la solicitud POST
     fetch(url, {
