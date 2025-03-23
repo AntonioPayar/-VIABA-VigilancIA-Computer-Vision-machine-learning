@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Videovigilancia</title>
+    <link rel="stylesheet" href="configuration_page.css">
+</head>
+<body>
+    <header>
+        <h1>Proyecto de Videovigilancia</h1>
+    </header>
+    <div class="container">
+        <div class="camera">
+            <h2>Cámara de seguridad</h2>
+            <img src="../data/room.jpg" alt="Vista de la cámara de seguridad" id="camera1">
+        </div>
+        <div class="camera">
+            <h2>Plano desde arriba</h2>
+            <img src="../data/mapa_desde_arriba.png" alt="Vista plano desde arriba" id="camera2">
+        </div>
+    </div>
+    <button onclick="guardarPuntos()">Configurar Camaras</button>
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>Pixel</th>
+                <th>Cámara de seguridad</th>
+                <th>Plano desde arriba</th>
+            </tr>
+            <tr>
+                <td id="esquina-superior-izquierda">ESQUINA SUPERIOR IZQUIERDA</td>
+                <td id="cam1-esquina-superior-izquierda">✓</td>
+                <td id="cam2-esquina-superior-izquierda">✓</td>
+            </tr>
+            <tr>
+                <td id="esquina-superior-derecha">ESQUINA SUPERIOR DERECHA</td>
+                <td id="cam1-esquina-superior-derecha">✓</td>
+                <td id="cam2-esquina-superior-derecha">✓</td>
+            </tr>
+            <tr>
+                <td id="esquina-inferior-izquierda">ESQUINA INFERIOR IZQUIERDA</td>
+                <td id="cam1-esquina-inferior-izquierda">✓</td>
+                <td id="cam2-esquina-inferior-izquierda">✓</td>
+            </tr>
+            <tr>
+                <td id="esquina-inferior-derecha">ESQUINA INFERIOR DERECHA</td>
+                <td id="cam1-esquina-inferior-derecha">✓</td>
+                <td id="cam2-esquina-inferior-derecha">✓</td>
+            </tr>
+        </table>
+    </div>
+    <button onclick="verificarYEnviar()">Enviar Resultados</button>
+    <footer>
+        <p>Utad© 2025 Asignatura Proyecto IV Videovigilancia</p>
+    </footer>
+    <script src="configuration_page.js"></script>
+</body>
+</html>
