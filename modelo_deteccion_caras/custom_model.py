@@ -7,12 +7,10 @@ from mlserver.errors import InferenceError
 import json
 
 import cv2
-import tensorflow as tf
-import tensorflow_hub as hub
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-class ObjectDetectionModel(MLModel):
+class FacesDetectionModel(MLModel):
     
     async def load(self) -> bool:
         # Create the detector instance directly
