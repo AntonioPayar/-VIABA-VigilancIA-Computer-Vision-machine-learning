@@ -134,7 +134,7 @@ function enviarResultados() {
     })
     .then(data => {
         console.log('Respuesta de la API:', data);
-        alert('Datos enviados correctamente');
+        alert(data.mensaje);
     })
     .catch(error => {
         console.error('Error al enviar los datos:', error);

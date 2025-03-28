@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 #Imports de clases propias
 from classes.Cordenadas_Configuracion import *
+from utils import *
 
 #Imports de librerias sencillas de python
 import os
@@ -33,5 +34,4 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.post("/getConfiguration")
 async def recibir_datos(datos: DatosCamaras):
-    print(datos.model_dump())  # Imprimir el JSON recibido en la consola
-    return {"mensaje": "Datos recibidos correctamente"}
+    return calcularPixelMapa(datos.camara1, datos.camara2)
