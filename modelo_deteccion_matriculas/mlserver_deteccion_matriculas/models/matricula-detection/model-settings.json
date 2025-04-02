@@ -1,0 +1,8 @@
+{
+  "name": "matricula-detection",
+  "implementation": "custom_matricula_model.MatriculaDetectionModel",
+  "parameters": {
+    "uri": "matricula_model.joblib",
+    "version": "v1.0.0"
+  }
+}
