@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxrender1 \
     libxext6 \
+    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -17,8 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar todo el código y los modelos
 COPY . .
 
-# Exponer los puertos según la configuración de settings.json (HTTP, gRPC, Metrics)
+# Exponer los puertos según la configuración de mlserver (HTTP, gRPC, Metrics)
 EXPOSE 8080 8081 8082
 
-# Comando para iniciar mlserver con el archivo de configuración
-CMD ["mlserver", "start", "--settings", "settings.json"]
+# Comando para iniciar mlserver
+CMD ["mlserver", "start", "."]
