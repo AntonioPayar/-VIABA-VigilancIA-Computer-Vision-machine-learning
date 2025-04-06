@@ -13,12 +13,16 @@ app = FastAPI()
 # Endpoints de inferencia
 YOLO_URL = "http://localhost:8080/v2/models/object-detection/infer"           # Modelo YOLO (detección general)
 FACE_URL = ""         # Modelo de reconocimiento facial
-MATRICULA_URL = ""   # Modelo de detección de matrículas
+MATRICULA_URL = "http://localhost:8081/v2/models/matricula-detection/infer"   # Modelo de detección de matrículas
 
 # Inicializa el tracker SORT
 tracker = Sort(max_age=5, min_hits=3, iou_threshold=0.3)
 # Diccionario para guardar el valor de "identificado" por track id
 track_identificados = {}
+# Lista para guardar el historial de detecciones
+history = []
+# Set para guardar IDs ya registrados en el historial
+registered_ids = set()
 
 
 def compute_iou(boxA, boxB):
@@ -123,9 +127,9 @@ async def websocket_endpoint(websocket: WebSocket):
                         ret_crop, crop_buffer = cv2.imencode(".jpg", crop)
                         b64_crop = base64.b64encode(crop_buffer).decode("utf-8")
                         crop_data = f"data:image/jpeg;base64,{b64_crop}"
-                        if best_det["class"] == "coche":
+                        if best_det["class"] == "car":
                             extra_response = await call_mlserver(MATRICULA_URL, crop_data)
-                        elif best_det["class"] == "persona":
+                        elif best_det["class"] == "person":
                             extra_response = await call_mlserver(FACE_URL, crop_data)
                         else:
                             extra_response = None
@@ -149,12 +153,51 @@ async def websocket_endpoint(websocket: WebSocket):
             for track in tracks:
                 tx1, ty1, tx2, ty2, track_id = map(int, track)
                 identificado_val = track_identificados.get(track_id, "N/A")
+                if "no se" in str(identificado_val).lower():
+                    identificado_val = "N/A"
                 cv2.rectangle(frame, (tx1, ty1), (tx2, ty2), (0, 255, 0), 2)
                 cv2.putText(frame, f"ID {track_id} - {identificado_val}", (tx1, ty1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
+                # Encuentra la clase asociada con este track
+                track_box = [tx1, ty1, tx2, ty2]
+                track_class = None
+                for det in detections_list:
+                    iou = compute_iou(track_box, det["bbox"])
+                    if iou > 0.5:  # Si hay suficiente solapamiento
+                        track_class = det["class"]
+                        break
+
+                # Si se ha identificado y no se ha registrado antes, añadir al historial
+                if identificado_val != "N/A" and "no se" not in str(identificado_val).lower() and (f"{track_class}-{identificado_val}" not in registered_ids) and track_class in ["car", "person"]:
+                    timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  # Tiempo en segundos
+                    history.append({
+                        "timestamp": f"{timestamp:.2f}s",
+                        "class": track_class,
+                        "id": identificado_val
+                    })
+                    registered_ids.add(f"{track_class}-{identificado_val}")
+
+            # Crear un panel para el historial en el lado derecho
+            panel_width = 300
+            frame_with_panel = np.zeros((frame.shape[0], frame.shape[1] + panel_width, 3), dtype=np.uint8)
+            frame_with_panel[:, :frame.shape[1]] = frame
+            frame_with_panel[:, frame.shape[1]:] = (50, 50, 50)  # Fondo gris oscuro
+
+            # Título del panel
+            cv2.putText(frame_with_panel, "Detection History", (frame.shape[1] + 10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+            # Mostrar el historial
+            y_offset = 70
+            for i, entry in enumerate(history[-15:]):  # Mostrar las últimas 15 entradas
+                color = (0, 255, 0) if entry["class"] == "person" else (255, 255, 0)  # Verde para personas, azul para coches
+                text = f"{entry['timestamp']} - [{entry['class']}] - {entry['id']}"
+                cv2.putText(frame_with_panel, text, (frame.shape[1] + 10, y_offset + i * 25),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
             # Re-codifica el frame con las anotaciones y envíalo por WebSocket
-            ret_out, buffer_out = cv2.imencode(".jpg", frame)
+            ret_out, buffer_out = cv2.imencode(".jpg", frame_with_panel)
             b64_frame_out = base64.b64encode(buffer_out).decode("utf-8")
             await websocket.send_text(b64_frame_out)
             await asyncio.sleep(0.033)  # Aproximadamente 30 FPS
@@ -176,7 +219,7 @@ async def get():
     </head>
     <body>
       <h1>Streaming de Video</h1>
-      <img id="video" width="640" height="480"/>
+      <img id="video" width="940" height="480"/>
       <script>
         const ws = new WebSocket("ws://localhost:8001/ws");
         ws.onmessage = function(event) {
