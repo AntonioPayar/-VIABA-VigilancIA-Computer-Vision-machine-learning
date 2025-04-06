@@ -53,11 +53,12 @@ class FacesDetectionModel(MLModel):
                 outputs=[
                     ResponseOutput(
                         name="detections_caras",
-                        shape=[len(face_vector)],
+                        shape=[1],
                         datatype="BYTES",
-                        data=[json.dumps(face_vector) for pred in predictions],
+                        data=[json.dumps(face_vector.tolist())],
                     )
                 ],
             )
         except Exception as e:
             raise InferenceError(f"Error during inference: {str(e)}")
+

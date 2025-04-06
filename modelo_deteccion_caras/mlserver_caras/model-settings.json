@@ -1,0 +1,8 @@
+{
+  "name": "faces-detection",
+  "implementation": "custom_model.FacesDetectionModel",
+  "parameters": {
+    "uri": "model.joblib",
+    "version": "v1.0.0"
+  }
+}
