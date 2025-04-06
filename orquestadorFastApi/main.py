@@ -6,12 +6,12 @@ from fastapi.responses import HTMLResponse
 import base64
 import json
 import numpy as np
-from sort import Sort  
+from sort import Sort
 
 app = FastAPI()
 
 # Endpoints de inferencia
-YOLO_URL = ""           # Modelo YOLO (detección general)
+YOLO_URL = "http://localhost:8080/v2/models/object-detection/infer"           # Modelo YOLO (detección general)
 FACE_URL = ""         # Modelo de reconocimiento facial
 MATRICULA_URL = ""   # Modelo de detección de matrículas
 
@@ -19,6 +19,7 @@ MATRICULA_URL = ""   # Modelo de detección de matrículas
 tracker = Sort(max_age=5, min_hits=3, iou_threshold=0.3)
 # Diccionario para guardar el valor de "identificado" por track id
 track_identificados = {}
+
 
 def compute_iou(boxA, boxB):
     # Calcula el Intersection over Union (IoU) entre dos cajas
@@ -34,7 +35,11 @@ def compute_iou(boxA, boxB):
     iou = interArea / float(boxAArea + boxBArea - interArea)
     return iou
 
+
 async def call_mlserver(url: str, image_data: str):
+    if not url:
+        # Devuelve una respuesta simulada sin inferencia.
+        return {"outputs": [{"data": []}]}
     payload = {
         "inputs": [
             {
@@ -48,6 +53,7 @@ async def call_mlserver(url: str, image_data: str):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload) as response:
             return await response.json()
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -71,10 +77,9 @@ async def websocket_endpoint(websocket: WebSocket):
             # Procesa las detecciones y crea una lista con diccionarios
             detections_list = []
             if yolo_response.get("outputs"):
-                detections_data = yolo_response["outputs"][0]["data"]
-                for detection_json in detections_data:
+                detections_data = json.loads(yolo_response["outputs"][0]["data"][0])
+                for detection in detections_data:
                     try:
-                        detection = json.loads(detection_json)
                         bbox = detection.get("bbox", [])
                         if len(bbox) == 4:
                             # Suponemos que la respuesta incluye "class" y "confidence"
@@ -86,12 +91,12 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "identificado": None
                             })
                     except Exception as e:
-                        print("Error procesando detección:", e)
+                        print(f"Error parsing json {detection_json}:", e)
 
             # Prepara el array para SORT: cada fila [x1, y1, x2, y2, confidence]
             if detections_list:
-                dets_array = np.array([[d["bbox"][0], d["bbox"][1], d["bbox"][2], d["bbox"][3], d["confidence"]] 
-                                        for d in detections_list])
+                dets_array = np.array([[d["bbox"][0], d["bbox"][1], d["bbox"][2], d["bbox"][3], d["confidence"]]
+                                       for d in detections_list])
             else:
                 dets_array = np.empty((0, 5))
 
@@ -160,6 +165,7 @@ async def websocket_endpoint(websocket: WebSocket):
         cap.release()
         await websocket.close()
 
+
 @app.get("/")
 async def get():
     html_content = """
@@ -172,7 +178,7 @@ async def get():
       <h1>Streaming de Video</h1>
       <img id="video" width="640" height="480"/>
       <script>
-        const ws = new WebSocket("ws://localhost:8000/ws");
+        const ws = new WebSocket("ws://localhost:8001/ws");
         ws.onmessage = function(event) {
           document.getElementById("video").src = "data:image/jpeg;base64," + event.data;
         };
