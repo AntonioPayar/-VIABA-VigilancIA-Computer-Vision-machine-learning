@@ -36,7 +36,7 @@ async function VerificacionPuntos() {
     try {
         // Llamar a enviarResultados y esperar la respuesta
         const json_recibido = await enviarResultados(datos, url);
-        pintarPuntoPlano(json_recibido.x, json_recibido.y);
+        pintarPunto('camera2', json_recibido.x, json_recibido.y);
         alert(`Respuesta recibida: X=${json_recibido.x}, Y=${json_recibido.y}`);
     } catch (error) {
         console.error('Error en VerificacionPuntos:', error);
@@ -78,51 +78,31 @@ function obtenerPunto(camera,color) {
     });
 }
 
-function pintarPuntoPlano(x = null, y = null) {
-    const camera = document.getElementById('camera2'); // Siempre usar 'camera2'
-    const color = 'blue'; // Color fijo
+function pintarPunto(cameraId, x, y, color = 'blue') {
+    const camera = document.getElementById(cameraId);
 
-    return new Promise((resolve) => {
-        function pintarPunto(x, y) {
-            // Crear un marcador (punto)
-            const marker = document.createElement('div');
-            marker.style.position = 'absolute';
-            marker.style.width = '50px';
-            marker.style.height = '50px';
-            marker.style.backgroundColor = color;
-            marker.style.borderRadius = '50%';
-            marker.style.left = `${x}px`; // Posición relativa al contenedor
-            marker.style.top = `${y}px`; // Posición relativa al contenedor
-            marker.style.transform = 'translate(-50%, -50%)'; // Centrar el marcador
+    if (!camera) {
+        console.error(`No se encontró una cámara con el ID: ${cameraId}`);
+        return;
+    }
 
-            // Agregar el marcador al contenedor de la cámara
-            camera.appendChild(marker);
+    // Crear un marcador (punto)
+    const marker = document.createElement('div');
+    marker.style.position = 'absolute';
+    marker.style.width = '50px'; // Tamaño del marcador
+    marker.style.height = '50px';
+    marker.style.backgroundColor = color;
+    marker.style.borderRadius = '50%';
+    marker.style.left = `${x}px`; // Posición relativa al contenedor
+    marker.style.top = `${y}px`; // Posición relativa al contenedor
+    marker.style.transform = 'translate(-50%, -50%)'; // Centrar el marcador
 
-            // Resolver la promesa con las coordenadas
-            resolve({ x, y });
-        }
+    // Asegurarse de que el contenedor tenga posición relativa
+    const container = camera.parentElement;
+    container.style.position = 'relative';
 
-        if (x !== null && y !== null) {
-            // Si se proporcionan coordenadas, pintar directamente
-            pintarPunto(x, y);
-        } else {
-            // Si no se proporcionan coordenadas, esperar al clic
-            function handleClick(event) {
-                const rect = camera.getBoundingClientRect(); // Obtener posición del elemento camera2
-                const clickX = event.clientX - rect.left; // Coordenada X relativa al elemento
-                const clickY = event.clientY - rect.top;  // Coordenada Y relativa al elemento
-
-                // Pintar el punto en las coordenadas del clic
-                pintarPunto(clickX, clickY);
-
-                // Eliminar el evento de clic después de seleccionar el punto
-                camera.removeEventListener('click', handleClick);
-            }
-
-            // Agregar el evento de clic al elemento camera2
-            camera.addEventListener('click', handleClick);
-        }
-    });
+    // Agregar el marcador al contenedor de la imagen
+    container.appendChild(marker);
 }
 
 
