@@ -4,6 +4,21 @@ from classes.Cordenadas_Configuracion import *
 
 import cv2
 import numpy as np
+import json
+
+
+# Función para guardar los datos
+def guardar_datos(datos: DatosCamaras, archivo: str):
+    with open(archivo, 'w') as f:
+        json.dump(datos.model_dump(), f, indent=4)
+
+# Función para cargar los datos
+def cargar_datos(archivo: str) -> DatosCamaras:
+    with open(archivo, 'r') as f:
+        data = json.load(f)
+    
+    print("Datos cargados...")
+    return DatosCamaras(**data)
 
 def calcularPixelMapaHomografia_2(camara1, camara2):
     # Datos de las esquinas en cam1 y cam2 (x1, y1) -> (x2, y2)
@@ -36,7 +51,7 @@ def calcularPixelMapaHomografia_2(camara1, camara2):
     return {"mensaje": f"Transformada en cam2 (Homografía): ({round(x2)}, {round(y2)})"}
 
 
-def calcularPixelMapa(camara1: DatosCamaras, camara2: DatosCamaras):
+def calcularPixelMapa(camara1: DatosCamaras, camara2: DatosCamaras,x1,y1):
     #Calculo de la distancia entre las esquinas superiores de las camaras
     print(str(round(float(camara1.esquinaSuperiorIzquierda.x)))+","+str(round(float(camara1.esquinaSuperiorIzquierda.y))))
     print(str(round(float(camara2.esquinaSuperiorIzquierda.x)))+","+str(round(float(camara2.esquinaSuperiorIzquierda.y))))
@@ -63,11 +78,7 @@ def calcularPixelMapa(camara1: DatosCamaras, camara2: DatosCamaras):
     sol_y = np.linalg.lstsq(cam1_points, cam2_points_y, rcond=None)[0]
 
     # Calcular la nueva coordenada (x2, y2) para (x1, y1) = (529, 546)
-    x1, y1 = 144, 513
     x2 = sol_x[0] * x1 + sol_x[1] * y1 + sol_x[2]
     y2 = sol_y[0] * x1 + sol_y[1] * y1 + sol_y[2]
 
-    print(f"Coeficientes transformación X: {sol_x}")
-    print(f"Coeficientes transformación Y: {sol_y}")
-    print(f"Coordenada transformada en cam2: ({round(x2)}, {round(y2)})")
-    return {"mensaje":f"Transformada en cam2: ({(round(x2)-70)}, {round(y2)})"}
+    return {"x": round(x2) - 70,"y": round(y2)}

@@ -34,4 +34,15 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.post("/getConfiguration")
 async def recibir_datos(datos: DatosCamaras):
-    return calcularPixelMapa(datos.camara1, datos.camara2)
+    # Guardar los datos en un archivo
+    guardar_datos(datos, "datos_camaras.json")
+    return calcularPixelMapa(datos.camara1, datos.camara2,0,0)
+
+@app.post("/getPixelPlano")
+async def recibir_datos_pixel_camara01(puntos: CoordenadaXY):
+    print("Puntos recibidos:")
+    print(puntos.x)
+    print(puntos.y)
+    # Cargar los datos desde el archivo
+    datos = cargar_datos("datos_camaras.json")
+    return calcularPixelMapa(datos.camara1, datos.camara2,float(puntos.x),float(puntos.y))
