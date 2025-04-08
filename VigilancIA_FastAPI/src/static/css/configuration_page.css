@@ -62,17 +62,21 @@ button:hover {
 }
 .container {
     display: flex;
-    justify-content: center;
-    gap: 20px;
+    justify-content: center; /* Centra los elementos en la fila */
+    gap: 20px; /* Espaciado entre los elementos */
     margin: 20px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* Evita que los elementos se muevan a una nueva fila */
+    overflow-x: auto; /* Permite el desplazamiento horizontal si no hay suficiente espacio */
 }
 .camera {
+    flex: 1; /* Hace que los elementos ocupen el mismo ancho */
+    max-width: 45%; /* Limita el ancho de cada elemento para que quepan en una fila */
     border: 2px solid #2c3e50;
     border-radius: 5px;
     padding: 10px;
     background-color: white;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center; /* Centra el contenido dentro de cada cámara */
 }
 .camera img {
     max-width: 100%;
