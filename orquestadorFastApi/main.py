@@ -12,7 +12,7 @@ app = FastAPI()
 
 # Endpoints de inferencia
 YOLO_URL = "http://localhost:8080/v2/models/object-detection/infer"           # Modelo YOLO (detección general)
-FACE_URL = ""         # Modelo de reconocimiento facial
+FACE_URL = "http://localhost:8082/v2/models/faces-detection/infer"            # Modelo de reconocimiento facial
 MATRICULA_URL = "http://localhost:8081/v2/models/matricula-detection/infer"   # Modelo de detección de matrículas
 
 # Inicializa el tracker SORT
@@ -123,6 +123,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Si no se ha identificado o el valor actual es "N/A", se reintenta la inferencia
                     if (track_id not in track_identificados) or (track_identificados.get(track_id) == "N/A"):
                         # Recorta la región del track
+                        ty1, ty2 = max(0, ty1), min(frame.shape[0], ty2)
+                        tx1, tx2 = max(0, tx1), min(frame.shape[1], tx2)
                         crop = frame[ty1:ty2, tx1:tx2]
                         ret_crop, crop_buffer = cv2.imencode(".jpg", crop)
                         b64_crop = base64.b64encode(crop_buffer).decode("utf-8")
