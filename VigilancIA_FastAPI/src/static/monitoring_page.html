@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Videovigilancia</title>
-    <link rel="stylesheet" href="/static/css/configuration_page.css" />
+    <link rel="stylesheet" href="/static/css/monitoring_page.css" />
   </head>
   <body>
     <header>
@@ -13,11 +13,7 @@
     <div class="container">
       <div class="camera">
         <h2>Cámara de seguridad</h2>
-        <img
-          src="/static/images/room.jpg"
-          alt="Vista de la cámara de seguridad"
-          id="camera1"
-        />
+        <video id="camera1" autoplay playsinline></video>
       </div>
       <div class="camera">
         <h2>Plano desde arriba</h2>
@@ -33,40 +29,34 @@
     <div class="table-container">
       <table>
         <tr>
-          <th>Pixel</th>
-          <th colspan="2">Cámara de seguridad</th>
-          <th colspan="2">Plano desde arriba</th>
+          <th colspan="2">Personas Identificadas</th>
+          <th colspan="2">Vehiculos Identificados</th>
         </tr>
         <tr>
-          <th>Posicion</th>
-          <th>X</th>
-          <th>Y</th>
-          <th>X</th>
-          <th>Y</th>
+          <th>Nombre</th>
+          <th>Hora Detectada</th>
+          <th>Matricula</th>
+          <th>Hora Detectada</th>
         </tr>
         <tr>
-          <td id="esquina-superior-izquierda">ESQUINA SUPERIOR IZQUIERDA</td>
           <td id="cam1-esquina-superior-izquierda_x">✓</td>
           <td id="cam1-esquina-superior-izquierda_y">✓</td>
           <td id="cam2-esquina-superior-izquierda_x">✓</td>
           <td id="cam2-esquina-superior-izquierda_y">✓</td>
         </tr>
         <tr>
-          <td id="esquina-superior-derecha">ESQUINA SUPERIOR DERECHA</td>
           <td id="cam1-esquina-superior-derecha_x">✓</td>
           <td id="cam1-esquina-superior-derecha_y">✓</td>
           <td id="cam2-esquina-superior-derecha_x">✓</td>
           <td id="cam2-esquina-superior-derecha_y">✓</td>
         </tr>
         <tr>
-          <td id="esquina-inferior-izquierda">ESQUINA INFERIOR IZQUIERDA</td>
           <td id="cam1-esquina-inferior-izquierda_x">✓</td>
           <td id="cam1-esquina-inferior-izquierda_y">✓</td>
           <td id="cam2-esquina-inferior-izquierda_x">✓</td>
           <td id="cam2-esquina-inferior-izquierda_y">✓</td>
         </tr>
         <tr>
-          <td id="esquina-inferior-derecha">ESQUINA INFERIOR DERECHA</td>
           <td id="cam1-esquina-inferior-derecha_x">✓</td>
           <td id="cam1-esquina-inferior-derecha_y">✓</td>
           <td id="cam2-esquina-inferior-derecha_x">✓</td>
@@ -78,6 +68,6 @@
     <footer>
       <p>Utad© 2025 Asignatura Proyecto IV Videovigilancia</p>
     </footer>
-    <script src="/static/js/configuration_page.js"></script>
+    <script src="/static/js/monitoring_page.js"></script>
   </body>
 </html>
