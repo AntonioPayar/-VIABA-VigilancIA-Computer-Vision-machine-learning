@@ -31,6 +31,7 @@ def read_root():
 
 # Endpoint para la página de configuración
 # http://127.0.0.1:8000/static/configuration_page.html
+# http://127.0.0.1:8000/static/monitoring_page.html
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

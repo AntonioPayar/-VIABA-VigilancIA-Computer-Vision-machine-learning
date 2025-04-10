@@ -1,3 +1,26 @@
+// Variable global para guardar el último punto seleccionado
+let ultimoPunto = { x: null, y: null };
+
+function iniciarCamara() {
+  const video = document.getElementById("camera1");
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        video.srcObject = stream;
+      })
+      .catch((error) => {
+        console.error("No se pudo acceder a la cámara: ", error);
+        alert("No se pudo acceder a la cámara.");
+      });
+  } else {
+    alert("Tu navegador no soporta acceso a la cámara.");
+  }
+}
+
+iniciarCamara();
+
 async function guardarPuntos() {
   const cameras = [
     { id: "camera1", prefix: "cam1" },
@@ -70,8 +93,8 @@ function obtenerPunto(camera, color) {
       // Crear un marcador (punto)
       const marker = document.createElement("div");
       marker.style.position = "absolute";
-      marker.style.width = "50px";
-      marker.style.height = "50px";
+      marker.style.width = "25px";
+      marker.style.height = "25px";
       marker.style.backgroundColor = color;
       marker.style.borderRadius = "50%";
       marker.style.left = `${x + rect.left}px`; // Posición absoluta en la página
@@ -93,6 +116,37 @@ function obtenerPunto(camera, color) {
   });
 }
 
+function pintarLinea(cameraId, x1, y1, x2, y2, color = "red") {
+  const camera = document.getElementById(cameraId);
+
+  if (!camera) {
+    console.error(`No se encontró una cámara con el ID: ${cameraId}`);
+    return;
+  }
+
+  const container = camera.parentElement;
+  container.style.position = "relative";
+
+  // Calcular distancia y ángulo
+  const deltaX = x2 - x1;
+  const deltaY = y2 - y1;
+  const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // en grados
+
+  // Crear la línea como un div rotado
+  const linea = document.createElement("div");
+  linea.style.position = "absolute";
+  linea.style.height = `12px`;
+  linea.style.width = `${length}px`;
+  linea.style.backgroundColor = color;
+  linea.style.left = `${x1}px`;
+  linea.style.top = `${y1}px`;
+  linea.style.transform = `rotate(${angle}deg)`;
+  linea.style.transformOrigin = "0 0"; // Anclar al inicio de la línea
+
+  container.appendChild(linea);
+}
+
 function pintarPunto(cameraId, x, y, color = "blue") {
   const camera = document.getElementById(cameraId);
 
@@ -104,8 +158,8 @@ function pintarPunto(cameraId, x, y, color = "blue") {
   // Crear un marcador (punto)
   const marker = document.createElement("div");
   marker.style.position = "absolute";
-  marker.style.width = "50px"; // Tamaño del marcador
-  marker.style.height = "50px";
+  marker.style.width = "15px"; // Tamaño del marcador
+  marker.style.height = "15px";
   marker.style.backgroundColor = color;
   marker.style.borderRadius = "50%";
   marker.style.left = `${x}px`; // Posición relativa al contenedor
@@ -118,6 +172,14 @@ function pintarPunto(cameraId, x, y, color = "blue") {
 
   // Agregar el marcador al contenedor de la imagen
   container.appendChild(marker);
+
+  // Pintar línea desde el último punto al nuevo
+  if (ultimoPunto.x !== null && ultimoPunto.y !== null) {
+    pintarLinea(cameraId, ultimoPunto.x, ultimoPunto.y, x, y);
+  }
+
+  // Actualizar variable global
+  ultimoPunto = { x, y };
 }
 
 function verificarYEnviar() {
