@@ -169,7 +169,7 @@ function verificarYEnviar() {
   };
 
   // URL del endpoint de la API
-  const url = "http://localhost:8000/getConfiguration";
+  const url = "http://localhost:8000/setConfiguration";
 
   // Seleccionar todas las celdas de la tabla que contienen coordenadas
   const celdas = document.querySelectorAll('td[id^="cam"]');

@@ -13,3 +13,6 @@ class Coordenadas(BaseModel):
 class DatosCamaras(BaseModel):
     camara1: Coordenadas
     camara2: Coordenadas
+
+class ImagenBase64(BaseModel):
+    image_base64: str
