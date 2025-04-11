@@ -9,14 +9,38 @@ function iniciarCamara() {
       .getUserMedia({ video: true, audio: false })
       .then((stream) => {
         video.srcObject = stream;
+        video.play();
+        video.addEventListener("loadedmetadata", () => {
+          comenzarCaptura(video);
+        });
       })
       .catch((error) => {
-        console.error("No se pudo acceder a la cámara: ", error);
+        console.error("No se pudo acceder a la cámara:", error);
         alert("No se pudo acceder a la cámara.");
       });
   } else {
     alert("Tu navegador no soporta acceso a la cámara.");
   }
+}
+
+function comenzarCaptura(video) {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  function capturarYEnviar() {
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const base64Image = canvas.toDataURL("image/jpeg").split(",")[1];
+
+    enviarFotogramas({ image_base64: base64Image }, "http://localhost:8000/getCamaraBounding");
+
+    setTimeout(capturarYEnviar, 200); // 5 fps (ajustable)
+  }
+
+  capturarYEnviar();
 }
 
 iniciarCamara();
@@ -231,7 +255,7 @@ function verificarYEnviar() {
   };
 
   // URL del endpoint de la API
-  const url = "http://localhost:8000/getConfiguration";
+  const url = "http://localhost:8000/setConfiguration";
 
   // Seleccionar todas las celdas de la tabla que contienen coordenadas
   const celdas = document.querySelectorAll('td[id^="cam"]');
@@ -276,3 +300,16 @@ async function enviarResultados(datos, url) {
     throw error; // Propagar el error para manejarlo en VerificacionPuntos
   }
 }
+
+function enviarFotogramas(datos, url) {
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(datos),
+  }).catch((error) => {
+    console.error("Error al enviar los datos:", error);
+  });
+}
+

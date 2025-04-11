@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
+import numpy as np
 
 # Imports de clases propias
 from classes.Cordenadas_Configuracion import *
@@ -10,6 +12,8 @@ from utils import *
 
 # Imports de librerias sencillas de python
 import os
+import base64
+import io
 
 app = FastAPI()
 
@@ -35,7 +39,7 @@ def read_root():
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
-@app.post("/getConfiguration")
+@app.post("/setConfiguration")
 async def recibir_datos(datos: DatosCamaras):
     # Guardar los datos en un archivo
     guardar_datos(datos, "datos_camaras.json")
@@ -52,3 +56,10 @@ async def recibir_datos_pixel_camara01(puntos: CoordenadaXY):
     return calcularPixelMapaHomografia(
         datos.camara1, datos.camara2, float(puntos.x), float(puntos.y)
     )
+
+
+@app.post("/getCamaraBounding")
+async def recibir_frame_camara01(data: ImagenBase64):
+    # Decodificar el base64 y convertir a imagen PIL
+    np_array = np.array(Image.open(io.BytesIO(base64.b64decode(data.image_base64))).convert("RGB"))
+    print(np_array)
