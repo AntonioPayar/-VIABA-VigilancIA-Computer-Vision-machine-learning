@@ -8,7 +8,8 @@ import numpy as np
 
 # Imports de clases propias
 from classes.Cordenadas_Configuracion import *
-from utils import *
+from monitoreo_offline.utils_offline import *
+from utils_configuration import *
 
 # Imports de librerias sencillas de python
 import os
@@ -26,6 +27,7 @@ app.add_middleware(
 
 # Obtiene la ruta absoluta de la carpeta estática
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+CONFIGURATION = None
 
 
 @app.get("/health")
@@ -48,18 +50,28 @@ async def recibir_datos(datos: DatosCamaras):
 
 @app.post("/getPixelPlano")
 async def recibir_datos_pixel_camara01(puntos: CoordenadaXY):
+    global CONFIGURATION
     print("Puntos recibidos:")
     print(puntos.x)
     print(puntos.y)
     # Cargar los datos desde el archivo
-    datos = cargar_datos("datos_camaras.json")
+    if CONFIGURATION == None:
+        CONFIGURATION = cargar_datos("datos_camaras.json")
     return calcularPixelMapaHomografia(
-        datos.camara1, datos.camara2, float(puntos.x), float(puntos.y)
+        CONFIGURATION.camara1, CONFIGURATION.camara2, float(puntos.x), float(puntos.y)
     )
 
 
 @app.post("/getCamaraBounding")
 async def recibir_frame_camara01(data: ImagenBase64):
+    global CONFIGURATION
     # Decodificar el base64 y convertir a imagen PIL
-    np_array = np.array(Image.open(io.BytesIO(base64.b64decode(data.image_base64))).convert("RGB"))
-    print(np_array)
+    img_pil = Image.open(io.BytesIO(base64.b64decode(data.image_base64)))
+    np_array = np.array(img_pil.convert("RGB"))
+    # Preprocesar la imagen
+    np_array = preprocess_image_numpy(add_padding(np_array))
+    # Realizar la detección de objetos
+    if CONFIGURATION == None:
+        CONFIGURATION = cargar_datos("datos_camaras.json")
+    return detect_objects(CONFIGURATION.camara1, CONFIGURATION.camara2, np_array)
+

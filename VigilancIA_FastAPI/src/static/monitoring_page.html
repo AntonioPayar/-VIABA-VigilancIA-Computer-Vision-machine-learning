@@ -15,59 +15,49 @@
         <h2>Cámara de seguridad</h2>
         <video id="camera1" autoplay playsinline></video>
       </div>
-      <div class="camera">
+      <div id="plano" class="camera">
         <h2>Plano desde arriba</h2>
         <img
           src="/static/images/mapa_desde_arriba.png"
           alt="Vista plano desde arriba"
           id="camera2"
+          width="640"
+          height="640"
         />
       </div>
     </div>
-    <button onclick="guardarPuntos()">Configurar Camaras</button>
-    <button onclick="VerificacionPuntos()">Verificar Mapeo</button>
+    <button onclick="eliminarTodoPlano()">Eliminar Tracking</button>
     <div class="table-container">
-      <table>
+      <!-- Tabla de Personas -->
+      <table id="tabla-personas">
         <tr>
-          <th colspan="2">Personas Identificadas</th>
-          <th colspan="2">Vehiculos Identificados</th>
+          <th colspan="4">Personas Identificadas</th>
         </tr>
         <tr>
           <th>Nombre</th>
           <th>Hora Detectada</th>
-          <th>Matricula</th>
+          <th>Color</th>
+          <th>Eliminar Tracking</th>
+        </tr>
+      </table>
+
+      <!-- Tabla de Vehículos -->
+      <table id="tabla-vehiculos">
+        <tr>
+          <th colspan="4">Vehículos Identificadas</th>
+        </tr>
+        <tr>
+          <th>Nombre</th>
           <th>Hora Detectada</th>
-        </tr>
-        <tr>
-          <td id="cam1-esquina-superior-izquierda_x">✓</td>
-          <td id="cam1-esquina-superior-izquierda_y">✓</td>
-          <td id="cam2-esquina-superior-izquierda_x">✓</td>
-          <td id="cam2-esquina-superior-izquierda_y">✓</td>
-        </tr>
-        <tr>
-          <td id="cam1-esquina-superior-derecha_x">✓</td>
-          <td id="cam1-esquina-superior-derecha_y">✓</td>
-          <td id="cam2-esquina-superior-derecha_x">✓</td>
-          <td id="cam2-esquina-superior-derecha_y">✓</td>
-        </tr>
-        <tr>
-          <td id="cam1-esquina-inferior-izquierda_x">✓</td>
-          <td id="cam1-esquina-inferior-izquierda_y">✓</td>
-          <td id="cam2-esquina-inferior-izquierda_x">✓</td>
-          <td id="cam2-esquina-inferior-izquierda_y">✓</td>
-        </tr>
-        <tr>
-          <td id="cam1-esquina-inferior-derecha_x">✓</td>
-          <td id="cam1-esquina-inferior-derecha_y">✓</td>
-          <td id="cam2-esquina-inferior-derecha_x">✓</td>
-          <td id="cam2-esquina-inferior-derecha_y">✓</td>
+          <th>Color</th>
+          <th>Eliminar Tracking</th>
         </tr>
       </table>
     </div>
-    <button onclick="verificarYEnviar()">Enviar Resultados</button>
+
     <footer>
       <p>Utad© 2025 Asignatura Proyecto IV Videovigilancia</p>
     </footer>
-    <script src="/static/js/monitoring_page.js"></script>
+    <script src="/static/js/monitoring_page.js" type="module"></script>
   </body>
 </html>

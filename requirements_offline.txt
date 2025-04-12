@@ -1,0 +1,10 @@
+fastapi
+numpy
+uvicorn
+opencv-python
+Pillow
+torch
+torchvision
+yolov5
+pandas
+requests
