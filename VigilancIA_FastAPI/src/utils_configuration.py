@@ -23,6 +23,29 @@ def cargar_datos(archivo: str) -> DatosCamaras:
     return DatosCamaras(**data)
 
 
+def escalar_coordenadas(pts_originales, altura_original, altura_nueva):
+    """
+    Escala las coordenadas Y de un conjunto de puntos para cambiar la altura de la imagen.
+
+    Args:
+        pts_originales (np.array): Matriz NumPy de coordenadas (x, y) originales.
+        altura_original (int): Altura original de la imagen.
+        altura_nueva (int): Nueva altura de la imagen.
+
+    Returns:
+        np.array: Matriz NumPy de coordenadas (x, y) escaladas.
+    """
+
+    proporcion_escalado = altura_nueva / altura_original
+    pts_escalados = (
+        pts_originales.copy()
+    )  # Crear una copia para no modificar el original
+    pts_escalados[:, 1] = np.round(
+        pts_originales[:, 1] * proporcion_escalado
+    )  # Escalar la coordenada y.
+    return pts_escalados
+
+
 def calcularPixelMapaHomografia(camara1: DatosCamaras, camara2: DatosCamaras, x1, y1):
     pts_img1 = np.array(
         [

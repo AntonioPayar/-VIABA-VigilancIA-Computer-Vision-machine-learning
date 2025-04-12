@@ -1,3 +1,28 @@
+
+function iniciarCamara() {
+  const video = document.getElementById("camera1");
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        video.srcObject = stream;
+        video.play();
+        video.addEventListener("loadedmetadata", () => {
+          comenzarCaptura(video);
+        });
+      })
+      .catch((error) => {
+        console.error("No se pudo acceder a la cámara:", error);
+        alert("No se pudo acceder a la cámara.");
+      });
+  } else {
+    alert("Tu navegador no soporta acceso a la cámara.");
+  }
+}
+
+iniciarCamara();
+
 async function guardarPuntos() {
   const cameras = [
     { id: "camera1", prefix: "cam1" },
@@ -70,8 +95,8 @@ function obtenerPunto(camera, color) {
       // Crear un marcador (punto)
       const marker = document.createElement("div");
       marker.style.position = "absolute";
-      marker.style.width = "50px";
-      marker.style.height = "50px";
+      marker.style.width = "20px";
+      marker.style.height = "20px";
       marker.style.backgroundColor = color;
       marker.style.borderRadius = "50%";
       marker.style.left = `${x + rect.left}px`; // Posición absoluta en la página
@@ -104,8 +129,8 @@ function pintarPunto(cameraId, x, y, color = "blue") {
   // Crear un marcador (punto)
   const marker = document.createElement("div");
   marker.style.position = "absolute";
-  marker.style.width = "50px"; // Tamaño del marcador
-  marker.style.height = "50px";
+  marker.style.width = "25px"; // Tamaño del marcador
+  marker.style.height = "25px";
   marker.style.backgroundColor = color;
   marker.style.borderRadius = "50%";
   marker.style.left = `${x}px`; // Posición relativa al contenedor
@@ -187,6 +212,7 @@ function verificarYEnviar() {
   // Si todas las celdas tienen valores válidos, llamar a la función para enviar los datos
   enviarResultados(datos, url);
   alert("Datos enviados correctamente.");
+  window.location.replace("monitoring_page.html");
 }
 
 async function enviarResultados(datos, url) {

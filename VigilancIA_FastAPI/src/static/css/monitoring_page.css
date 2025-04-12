@@ -62,25 +62,28 @@ button:hover {
 }
 .container {
     display: flex;
-    justify-content: center; /* Centra los elementos en la fila */
-    gap: 20px; /* Espaciado entre los elementos */
+    justify-content: center;
+    gap: 20px;
     margin: 20px;
-    flex-wrap: nowrap; /* Evita que los elementos se muevan a una nueva fila */
-    overflow-x: auto; /* Permite el desplazamiento horizontal si no hay suficiente espacio */
+    flex-wrap: nowrap;
+    overflow-x: auto;
 }
+
 .camera {
-    flex: 1; /* Hace que los elementos ocupen el mismo ancho */
-    max-width: 45%; /* Limita el ancho de cada elemento para que quepan en una fila */
+    flex: 1;
+    max-width: 660px; /* Aumenta el max-width para acomodar la imagen de 640px */
     border: 2px solid #2c3e50;
     border-radius: 5px;
     padding: 10px;
     background-color: white;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    text-align: center; /* Centra el contenido dentro de cada cámara */
+    text-align: center;
 }
+
 .camera img {
-    max-width: 100%;
-    height: auto;
+    width: 640px; /* Asegura que la imagen tenga 640px de ancho */
+    height: 640px; /* Asegura que la imagen tenga 640px de alto */
+    object-fit: contain; /* Evita que la imagen se estire y mantenga su relación de aspecto */
     border-radius: 5px;
 }
 footer {
