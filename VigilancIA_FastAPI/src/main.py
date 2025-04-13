@@ -1,4 +1,5 @@
 # Imports de librerias complejas de python
+# Imports de librerias complejas de python
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -7,10 +8,12 @@ from PIL import Image
 import numpy as np
 
 # Imports de clases propias
+# Imports de clases propias
 from classes.Cordenadas_Configuracion import *
 from monitoreo_offline.utils_offline import *
 from utils_configuration import *
 
+# Imports de librerias sencillas de python
 # Imports de librerias sencillas de python
 import os
 import base64
