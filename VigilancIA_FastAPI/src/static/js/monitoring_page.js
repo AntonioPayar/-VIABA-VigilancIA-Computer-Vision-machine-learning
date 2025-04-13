@@ -1,8 +1,16 @@
 import { Persona, agregarPersonaATabla } from "./modelos_objetos.js";
 // Variable global para guardar el último punto seleccionado
-let ultimoPunto = { x: null, y: null };
 let personas = [];
 let contador = 0;
+
+async function eliminarTodoPlano() {
+  const plano = document.getElementById("plano");
+  const divs = plano.querySelectorAll("div");
+
+  divs.forEach((div) => {
+    plano.removeChild(div);
+  });
+}
 
 function iniciarCamara() {
   const video = document.getElementById("camera1");
@@ -29,38 +37,45 @@ function iniciarCamara() {
 // Función para dibujar las bounding boxes sobre el canvas
 function posicionarMapa(context, boundingBoxes) {
   if (boundingBoxes && boundingBoxes.length > 0) {
-    const primerObjeto = boundingBoxes[0]; // Obtiene el primer objeto del array
-    contador++;
-    const persona = new Persona(
-      contador,
-      "Recesvinto",
-      "red",
-      obtenerHoraActual()
-    );
-    console.error("Persona creada:", persona);
+    boundingBoxes.forEach((deteccion) => {
+      // Verificamos si la persona detectada ya existe
+      let persona;
+      let last_point;
+      if (!personas[deteccion.track_id]) {
+        contador++;
+        persona = new Persona(
+          deteccion.track_id,
+          deteccion.clase,
+          deteccion.color,
+          obtenerHoraActual(),
+          contador
+        );
+        last_point = { x: null, y: null };
+      } else {
+        persona = personas[deteccion.track_id];
+        last_point = persona.ultimo_punto;
+      }
 
-    const lowerLeftX = primerObjeto.lower_left.x;
-    const lowerLeftY = primerObjeto.lower_left.y;
-    const lowerRightX = primerObjeto.lower_right.x;
-    const lowerRightY = primerObjeto.lower_right.y;
+      const lowerLeftX = deteccion.lower_left.x;
+      const lowerLeftY = deteccion.lower_left.y;
+      const lowerRightX = deteccion.lower_right.x;
+      const lowerRightY = deteccion.lower_right.y;
 
-    console.error("Coordenadas del primer objeto:");
-    console.error("Lower Left X:", lowerLeftX);
-    console.error("Lower Left Y:", lowerLeftY);
-    console.error("Lower Right X:", lowerRightX);
-    console.error("Lower Right Y:", lowerRightY);
+      const { marker, linea } = pintarPunto(
+        "camera2",
+        lowerLeftX,
+        lowerLeftY,
+        persona.color,
+        last_point
+      );
 
-    const { marker, linea, ultimoPunto } = pintarPunto(
-      "camera2",
-      lowerLeftX,
-      lowerLeftY
-    );
+      persona.setUltimoPunto(lowerLeftX, lowerLeftY); // Actualizar el último punto en la persona
+      persona.agregarPunto(marker); // Guardar referencia al marcador en la persona
+      persona.agregarLinea(linea); // Guardar referencia a la línea en la persona
+      personas[deteccion.track_id] = persona; // Guardar la persona en el array
 
-    persona.agregarPunto(marker); // Guardar referencia al marcador en la persona
-    persona.agregarLinea(linea); // Guardar referencia a la línea en la persona
-    persona.setUltimoPunto(ultimoPunto); // Actualizar el último punto en la persona
-    personas.push(persona); // Agregar la persona al array de personas
-    //agregarPersonaATabla(persona);
+      agregarPersonaATabla(persona);
+    });
   } else {
     console.log("No se recibieron bounding boxes o el array está vacío.");
   }
@@ -117,16 +132,7 @@ function comenzarCaptura(video) {
 
 iniciarCamara();
 
-async function eliminarTodoPlano() {
-  const plano = document.getElementById("plano");
-  const divs = plano.querySelectorAll("div");
-
-  divs.forEach((div) => {
-    plano.removeChild(div);
-  });
-}
-
-function pintarLinea(cameraId, x1, y1, x2, y2, color = "red") {
+function pintarLinea(cameraId, x1, y1, x2, y2, color) {
   const camera = document.getElementById(cameraId);
 
   if (!camera) {
@@ -158,7 +164,7 @@ function pintarLinea(cameraId, x1, y1, x2, y2, color = "red") {
   return linea; // Devolver la línea creada
 }
 
-function pintarPunto(cameraId, x, y, color = "blue") {
+function pintarPunto(cameraId, x, y, color, ultimo_punto) {
   const camera = document.getElementById(cameraId);
 
   if (!camera) {
@@ -183,16 +189,13 @@ function pintarPunto(cameraId, x, y, color = "blue") {
 
   // Agregar el marcador al contenedor de la imagen
   container.appendChild(marker);
-  
+
   let linea;
   // Pintar línea desde el último punto al nuevo
-  if (ultimoPunto.x !== null && ultimoPunto.y !== null) {
-    linea = pintarLinea(cameraId, ultimoPunto.x, ultimoPunto.y, x, y);
+  if (ultimo_punto.x !== null && ultimo_punto.y !== null) {
+    linea = pintarLinea(cameraId, ultimo_punto.x, ultimo_punto.y, x, y, color);
   }
-
-  // Actualizar variable global
-  ultimoPunto = { x, y };
-  return { marker, linea, ultimoPunto }; // Correcto
+  return { marker, linea }; // Correcto
 }
 
 function obtenerHoraActual() {
@@ -208,3 +211,6 @@ function obtenerHoraActual() {
     .toString()
     .padStart(3, "0")}`;
 }
+
+// Exponer la función al ámbito global
+window.eliminarTodoPlano = eliminarTodoPlano;
