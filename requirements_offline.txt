@@ -1,5 +1,7 @@
 fastapi
 numpy
+filterpy
+lap
 uvicorn
 opencv-python
 Pillow

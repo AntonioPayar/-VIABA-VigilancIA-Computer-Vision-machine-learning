@@ -5,10 +5,32 @@ from PIL import Image
 
 # Imports de clases propias
 from classes.Cordenadas_Configuracion import *
+from classes.Clases_Detecciones import Persona
+from monitoreo_offline.sort import Sort
 
 import cv2
 
 YOLO = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
+SORT_TRACKER = Sort(max_age=20, min_hits=3, iou_threshold=0.2)
+COLOR = [
+    "red",
+    "green",
+    "blue",
+    "orange",
+    "purple",
+    "cyan",
+    "magenta",
+    "yellow",
+    "lime",
+    "pink",
+    "teal",
+    "brown",
+    "gray",
+    "olive",
+    "maroon",
+    "navy",
+]
+LISTAS_PERSONAS = {}
 
 
 def add_padding(np_array):
@@ -102,35 +124,63 @@ def calcularPixelMapaHomografia(camara1: DatosCamaras, camara2: DatosCamaras, x1
     return {"x": round(new_x), "y": round(new_y)}
 
 
+def trackerar_detecciones(people_detections):
+    dets_for_sort = []
+
+    for _, row in people_detections.iterrows():
+        x1, y1, x2, y2, conf = (
+            float(row["xmin"]),
+            float(row["ymin"]),
+            float(row["xmax"]),
+            float(row["ymax"]),
+            float(row["confidence"]),
+        )
+        dets_for_sort.append([x1, y1, x2, y2, conf])
+
+    dets_for_sort = np.array(dets_for_sort)
+
+    if len(dets_for_sort) == 0:
+        dets_for_sort = np.empty((0, 5))
+    else:
+        dets_for_sort = np.array(dets_for_sort)
+    # Ejecutar el tracker
+    tracked_objects = SORT_TRACKER.update(dets_for_sort)
+    return tracked_objects
+
+
 def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
     # Realizamos la inferencia
     results = YOLO(image_tensor)
-
     # Obtener las bounding boxes, clases y scores
     detections = results.pandas().xyxy[0]
-
     # Filtrar solo las detecciones de la clase "persona" (class == 0)
     people_detections = detections[detections["class"] == 0]
 
-    bounding_boxes = []
-    for _, row in people_detections.iterrows():
-        print("Persona Identidificada")
-        # Calculamos la esquina inferior izquierda: (xmin, ymax)
-        lower_left = calcularPixelMapaHomografia(
-            camara1, camara2, float(row["xmin"]), float(row["ymax"])
-        )
-        lower_right = calcularPixelMapaHomografia(
-            camara1, camara2, float(row["xmax"]), float(row["ymax"])
-        )
+    if people_detections.empty:
+        return []
+    else:
+        # Aplicar el tracker
+        tracked_objects = trackerar_detecciones(people_detections)
 
-        box = {
-            "lower_left": lower_left,  # Coordenada de la esquina inferior izquierda
-            "lower_right": lower_right,  # Coordenada de la esquina inferior derecha
-            "color": "blue",
-            "confidence": float(row["confidence"]),
-            "class": int(row["class"]),
-            "label": row["name"],
-        }
-        bounding_boxes.append(box)
-    
-    return bounding_boxes
+        bounding_boxes = []
+        for track in tracked_objects:
+            x1, y1, x2, y2, track_id = track[
+                :5
+            ]  # ID está en track[4] o track[5] dependiendo de versión
+
+            lower_left = calcularPixelMapaHomografia(camara1, camara2, x1, y2)
+            lower_right = calcularPixelMapaHomografia(camara1, camara2, x2, y2)
+
+            color = COLOR[int(track_id) % len(COLOR)]
+
+            persona_detectada = Persona(
+                int(track_id), 1.0, color, lower_right, lower_left
+            )
+            LISTAS_PERSONAS[int(track_id)] = (
+                persona_detectada  # Guardamos la persona en el diccionario
+            )
+            print(f"ID: {track_id}, Color: {color}")
+
+            bounding_boxes.append(persona_detectada.__dict__)
+            print(len(bounding_boxes))
+        return bounding_boxes
