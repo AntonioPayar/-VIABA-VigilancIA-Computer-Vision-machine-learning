@@ -1,4 +1,3 @@
-
 class Persona:
     def __init__(self, id, confidence, color, lower_right, lower_left):
         self.track_id = id
