@@ -2,6 +2,7 @@ import { Persona, agregarPersonaATabla } from "./modelos_objetos.js";
 // Variable global para guardar el último punto seleccionado
 let personas = [];
 let contador = 0;
+let cameraYoloImage = document.getElementById("camera_yolo");
 
 async function eliminarTodoPlano() {
   const plano = document.getElementById("plano");
@@ -98,11 +99,22 @@ function comenzarCaptura(video) {
       { image_base64: base64Image },
       "http://localhost:8000/getCamaraBounding"
     )
-      .then((boundingBoxes) => {
-        // Después de recibir la respuesta, dibujamos las bounding boxes sobre el canvas
-        if (boundingBoxes && boundingBoxes.length > 0) {
-          posicionarMapa(context, boundingBoxes); // boundingBoxes es un array de objetos box
-        }
+      .then((response) => {
+        const boundingBoxes = response.bounding_boxes;
+        const imageBounding = response.image_bounding;
+
+        const image = new Image();
+        image.src = `data:image/jpeg;base64,${imageBounding}`;
+
+        image.onload = () => {
+          // Reemplaza la imagen actual en el elemento camera_yolo
+          cameraYoloImage.src = image.src;
+
+          context.drawImage(image, 0, 0); // Dibuja la imagen en el canvas (si es necesario)
+          if (boundingBoxes && boundingBoxes.length > 0) {
+            posicionarMapa(context, boundingBoxes);
+          }
+        };
       })
       .catch((error) => {
         console.error("Error al recibir los bounding boxes:", error);

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from PIL import Image
 import numpy as np
 
@@ -70,8 +71,15 @@ async def recibir_frame_camara01(data: ImagenBase64):
     np_array = np.array(img_pil.convert("RGB"))
     # Preprocesar la imagen
     np_array = preprocess_image_numpy(add_padding(np_array))
+
     # Realizar la detección de objetos
     if CONFIGURATION == None:
         CONFIGURATION = cargar_datos("datos_camaras.json")
-    return detect_objects(CONFIGURATION.camara1, CONFIGURATION.camara2, np_array)
-
+        
+    # Detectar objetos en la imagen
+    bounding_boxes, image_bounding = detect_objects(
+        CONFIGURATION.camara1, CONFIGURATION.camara2, np_array
+    )
+    return JSONResponse(
+        content={"bounding_boxes": bounding_boxes, "image_bounding": image_bounding}
+    )

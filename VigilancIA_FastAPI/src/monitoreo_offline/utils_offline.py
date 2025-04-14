@@ -1,7 +1,9 @@
 import torch
 import numpy as np
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageDraw
+import base64
+from io import BytesIO
 
 # Imports de clases propias
 from classes.Cordenadas_Configuracion import *
@@ -14,12 +16,12 @@ import argparse
 
 YOLO = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
 args = argparse.Namespace(
-    track_thresh=0.25, #Este parámetro define el umbral de confianza para detectar objetos que se van a seguir.
-    track_buffer=90, # Este parámetro define el número de fotogramas que se almacenan en el búfer de seguimiento.
-    match_thresh=0.5, # Este parámetro define el umbral de similitud para asociar detecciones con pistas existentes.
-    mot20=False #Este parámetro indica si se está utilizando el conjunto de datos MOT20 (Multiple Object Tracking 20).
+    track_thresh=0.50,  # Este parámetro define el umbral de confianza para detectar objetos que se van a seguir.
+    track_buffer=160,  # Este parámetro define el número de fotogramas que se almacenan en el búfer de seguimiento.
+    match_thresh=0.95,  # Este parámetro define el umbral de similitud para asociar detecciones con pistas existentes.
+    mot20=False,  # Este parámetro indica si se está utilizando el conjunto de datos MOT20 (Multiple Object Tracking 20).
 )
-SORT_TRACKER = BYTETracker(args, frame_rate=30)
+SORT_TRACKER = BYTETracker(args, frame_rate=40)
 COLOR = [
     "red",
     "green",
@@ -132,6 +134,28 @@ def calcularPixelMapaHomografia(camara1: DatosCamaras, camara2: DatosCamaras, x1
     return {"x": round(new_x), "y": round(new_y)}
 
 
+def imagen_bounding_boxes(image_tensor, people_detections=None):
+    """
+    Dibuja bounding boxes en la imagen y la convierte a Base64.
+    Si people_detections es None o está vacío, convierte la imagen original a Base64.
+    """
+    image = Image.fromarray(image_tensor)
+    if people_detections is not None and not people_detections.empty:
+        draw = ImageDraw.Draw(image)
+        for index, row in people_detections.iterrows():
+            x1, y1, x2, y2 = (
+                int(row["xmin"]),
+                int(row["ymin"]),
+                int(row["xmax"]),
+                int(row["ymax"]),
+            )
+            draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
+
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode()
+
+
 def trackerar_detecciones(people_detections, image_tensor):
     # Convertir detecciones a formato esperado por ByteTrack: [x1, y1, x2, y2, score]
     dets_for_tracker = people_detections[
@@ -154,8 +178,11 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
     # Filtrar solo las detecciones de la clase "persona" (class == 0)
     people_detections = detections[detections["class"] == 0]
 
+    # Obtenemos la imagen con bounding boxes
+    image_bounding = imagen_bounding_boxes(image_tensor, people_detections)
+
     if people_detections.empty:
-        return []
+        return [], image_bounding
     else:
         # Aplicar el tracker
         tracked_objects = trackerar_detecciones(people_detections, image_tensor)
@@ -182,4 +209,4 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
 
             bounding_boxes.append(persona_detectada.__dict__)
             print(len(bounding_boxes))
-        return bounding_boxes
+        return bounding_boxes, image_bounding
