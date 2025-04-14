@@ -7,11 +7,19 @@ from PIL import Image
 from classes.Cordenadas_Configuracion import *
 from classes.Clases_Detecciones import Persona
 from monitoreo_offline.sort import Sort
+from ByteTrack.yolox.tracker.byte_tracker import BYTETracker
 
 import cv2
+import argparse
 
 YOLO = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
-SORT_TRACKER = Sort(max_age=20, min_hits=3, iou_threshold=0.2)
+args = argparse.Namespace(
+    track_thresh=0.25, #Este parámetro define el umbral de confianza para detectar objetos que se van a seguir.
+    track_buffer=90, # Este parámetro define el número de fotogramas que se almacenan en el búfer de seguimiento.
+    match_thresh=0.5, # Este parámetro define el umbral de similitud para asociar detecciones con pistas existentes.
+    mot20=False #Este parámetro indica si se está utilizando el conjunto de datos MOT20 (Multiple Object Tracking 20).
+)
+SORT_TRACKER = BYTETracker(args, frame_rate=30)
 COLOR = [
     "red",
     "green",
@@ -124,28 +132,18 @@ def calcularPixelMapaHomografia(camara1: DatosCamaras, camara2: DatosCamaras, x1
     return {"x": round(new_x), "y": round(new_y)}
 
 
-def trackerar_detecciones(people_detections):
-    dets_for_sort = []
-
-    for _, row in people_detections.iterrows():
-        x1, y1, x2, y2, conf = (
-            float(row["xmin"]),
-            float(row["ymin"]),
-            float(row["xmax"]),
-            float(row["ymax"]),
-            float(row["confidence"]),
-        )
-        dets_for_sort.append([x1, y1, x2, y2, conf])
-
-    dets_for_sort = np.array(dets_for_sort)
-
-    if len(dets_for_sort) == 0:
-        dets_for_sort = np.empty((0, 5))
-    else:
-        dets_for_sort = np.array(dets_for_sort)
-    # Ejecutar el tracker
-    tracked_objects = SORT_TRACKER.update(dets_for_sort)
-    return tracked_objects
+def trackerar_detecciones(people_detections, image_tensor):
+    # Convertir detecciones a formato esperado por ByteTrack: [x1, y1, x2, y2, score]
+    dets_for_tracker = people_detections[
+        ["xmin", "ymin", "xmax", "ymax", "confidence"]
+    ].to_numpy()
+    # ByteTrack requiere info de tamaño de imagen: (alto, ancho)
+    image_height, image_width = image_tensor.shape[1:3]  # tensor shape: [C, H, W]
+    # Aplicar tracker de ByteTrack
+    online_targets = SORT_TRACKER.update(
+        dets_for_tracker, [image_height, image_width], (image_height, image_width)
+    )
+    return online_targets
 
 
 def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
@@ -160,13 +158,14 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
         return []
     else:
         # Aplicar el tracker
-        tracked_objects = trackerar_detecciones(people_detections)
+        tracked_objects = trackerar_detecciones(people_detections, image_tensor)
 
         bounding_boxes = []
-        for track in tracked_objects:
-            x1, y1, x2, y2, track_id = track[
-                :5
-            ]  # ID está en track[4] o track[5] dependiendo de versión
+        for t in tracked_objects:
+            tlwh = t.tlwh  # [x, y, w, h]
+            x1, y1 = tlwh[0], tlwh[1]
+            x2, y2 = x1 + tlwh[2], y1 + tlwh[3]
+            track_id = t.track_id
 
             lower_left = calcularPixelMapaHomografia(camara1, camara2, x1, y2)
             lower_right = calcularPixelMapaHomografia(camara1, camara2, x2, y2)

@@ -2,3 +2,4 @@ entorno_proyectos*
 __pycache__
 /Tracking_Tests/videos
 /FineTuning/RWF-2000
+yolov5s.pt

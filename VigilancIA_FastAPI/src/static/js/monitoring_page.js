@@ -91,7 +91,7 @@ function comenzarCaptura(video) {
   function capturarYEnviar() {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const base64Image = canvas.toDataURL("image/jpeg").split(",")[1];
+    const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1]; // Reducir la calidad a 0.8
 
     // Enviar la imagen al servidor
     enviarFotogramas(
@@ -101,7 +101,6 @@ function comenzarCaptura(video) {
       .then((boundingBoxes) => {
         // Después de recibir la respuesta, dibujamos las bounding boxes sobre el canvas
         if (boundingBoxes && boundingBoxes.length > 0) {
-          console.error("hola");
           posicionarMapa(context, boundingBoxes); // boundingBoxes es un array de objetos box
         }
       })
@@ -109,7 +108,7 @@ function comenzarCaptura(video) {
         console.error("Error al recibir los bounding boxes:", error);
       });
 
-    setTimeout(capturarYEnviar, 500); // 5 fps (ajustable)
+    requestAnimationFrame(capturarYEnviar); // Usar requestAnimationFrame para FPS máximos
   }
 
   function enviarFotogramas(datos, url) {

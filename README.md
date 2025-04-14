@@ -22,3 +22,24 @@
 ### De tal manera que si un alumno quiere trabajar en una nueva implementación tendrá que crearse una rama independiente para guardar sus cambios hasta la finalización de la tarea
 
 ### Cuando dicha implementación esté finalizada podrá subir sus cambios a la rama MAIN
+
+<h1 style="text-align: center;">Instalación</h1>
+
+```bash
+# Clonar Repositorio
+git clone https://github.com/AntonioPayar/-VIABA-VigilancIA-Computer-Vision-machine-learning.git
+
+#Crear entorno python
+python3 -m venv entorno_proyectos_II
+source entorno_proyectos_II/bin/activate
+
+#Instalar Dependencias
+pip install -r ByteTrack/requirements_II.txt
+cd VigilancIA_FastAPI/src/ByteTrack/
+pip install -v -e .
+
+#Salir ejecutar FastAPI
+cd..
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+```
