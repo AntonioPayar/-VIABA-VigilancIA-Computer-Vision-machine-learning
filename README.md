@@ -34,8 +34,12 @@ python3 -m venv entorno_proyectos_II
 source entorno_proyectos_II/bin/activate
 
 #Instalar Dependencias
-pip install -r ByteTrack/requirements_II.txt
-cd VigilancIA_FastAPI/src/ByteTrack/
+pip install -r requirements_offline.txt
+
+#Instalar ByteTrack (!DENTRO DEL PROYECTO!)
+cd VigilancIA_FastAPI/src/
+git clone https://github.com/ifzhang/ByteTrack.git
+cd VigilancIA_FastAPI/src/ByteTrack
 pip install -v -e .
 
 #Salir ejecutar FastAPI
@@ -43,3 +47,13 @@ cd..
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ```
+<h1 style="text-align: center;">Entrar Páginas</h1>
+
+http://127.0.0.1:8000/static/configuration_page.html
+
+![alt text](imgs/image-1.png)
+
+http://127.0.0.1:8000/static/monitoring_page.html
+
+![alt text](imgs/image.png)
+
