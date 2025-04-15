@@ -1,20 +1,21 @@
 import torch
 import numpy as np
 import pandas as pd
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import base64
 from io import BytesIO
 
 # Imports de clases propias
 from classes.Cordenadas_Configuracion import *
 from classes.Clases_Detecciones import Persona
-from monitoreo_offline.sort import Sort
 from ByteTrack.yolox.tracker.byte_tracker import BYTETracker
 
 import cv2
 import argparse
 
+print("Cargando el modelo YOLOv5...")
 YOLO = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
+print("Modelo YOLOv5 cargado.")
 args = argparse.Namespace(
     track_thresh=0.50,  # Este parámetro define el umbral de confianza para detectar objetos que se van a seguir.
     track_buffer=160,  # Este parámetro define el número de fotogramas que se almacenan en el búfer de seguimiento.
@@ -134,22 +135,45 @@ def calcularPixelMapaHomografia(camara1: DatosCamaras, camara2: DatosCamaras, x1
     return {"x": round(new_x), "y": round(new_y)}
 
 
-def imagen_bounding_boxes(image_tensor, people_detections=None):
+def comprobar_detecciones(detecciones_trackeadas, x1, y1, x2, y2):
+    tolerancia=5
+    for dict_persona in detecciones_trackeadas:
+        if (
+            abs(dict_persona["x1_imagen_original"] - x1) <= tolerancia
+            and abs(dict_persona["y1_imagen_original"] - y1) <= tolerancia
+            and abs(dict_persona["x2_imagen_original"] - x2) <= tolerancia
+            and abs(dict_persona["y2_imagen_original"] - y2) <= tolerancia
+        ):
+            return dict_persona["color"], dict_persona["clase"]
+    return "red", "None"  # Color por defecto si no se encuentra coincidencia
+
+
+def imagen_bounding_boxes(image_tensor, detecciones_trackeadas, detections=None):
     """
     Dibuja bounding boxes en la imagen y la convierte a Base64.
-    Si people_detections es None o está vacío, convierte la imagen original a Base64.
+    Si detections es None o está vacío, convierte la imagen original a Base64.
     """
     image = Image.fromarray(image_tensor)
-    if people_detections is not None and not people_detections.empty:
+
+    if detections is not None and not detections.empty:
         draw = ImageDraw.Draw(image)
-        for index, row in people_detections.iterrows():
+        fuente = ImageFont.load_default()
+        for index, row in detections.iterrows():
             x1, y1, x2, y2 = (
                 int(row["xmin"]),
                 int(row["ymin"]),
                 int(row["xmax"]),
                 int(row["ymax"]),
             )
-            draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
+            color, name = comprobar_detecciones(detecciones_trackeadas, x1, y1, x2, y2)
+            draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
+
+            # Calcular la posición del texto
+            texto_x = x1
+            texto_y = y1 - 15 - 5  # Colocar el texto encima del bounding box
+
+            # Dibujar el texto
+            draw.text((texto_x, texto_y), name, fill=color, font=fuente)
 
     buffered = BytesIO()
     image.save(buffered, format="JPEG")
@@ -178,16 +202,11 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
     # Filtrar solo las detecciones de la clase "persona" (class == 0)
     people_detections = detections[detections["class"] == 0]
 
-    # Obtenemos la imagen con bounding boxes
-    image_bounding = imagen_bounding_boxes(image_tensor, people_detections)
-
-    if people_detections.empty:
-        return [], image_bounding
-    else:
+    detecciones_trackeadas = []
+    if not people_detections.empty:
         # Aplicar el tracker
         tracked_objects = trackerar_detecciones(people_detections, image_tensor)
 
-        bounding_boxes = []
         for t in tracked_objects:
             tlwh = t.tlwh  # [x, y, w, h]
             x1, y1 = tlwh[0], tlwh[1]
@@ -200,13 +219,19 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
             color = COLOR[int(track_id) % len(COLOR)]
 
             persona_detectada = Persona(
-                int(track_id), 1.0, color, lower_right, lower_left
+                int(track_id), 1.0, color, lower_right, lower_left, x1, y1, x2, y2
             )
             LISTAS_PERSONAS[int(track_id)] = (
                 persona_detectada  # Guardamos la persona en el diccionario
             )
             print(f"ID: {track_id}, Color: {color}")
 
-            bounding_boxes.append(persona_detectada.__dict__)
-            print(len(bounding_boxes))
-        return bounding_boxes, image_bounding
+            detecciones_trackeadas.append(persona_detectada.__dict__)
+            print(len(detecciones_trackeadas))
+
+    # Obtenemos la imagen con bounding boxes
+    image_bounding = imagen_bounding_boxes(
+        image_tensor, detecciones_trackeadas, people_detections
+    )
+
+    return detecciones_trackeadas, image_bounding
