@@ -33,7 +33,7 @@ app.add_middleware(
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 CONFIGURATION = None
 
-
+#Copia de seguridad
 @app.get("/health")
 def read_root():
     return {"greeting": "Hello world"}
