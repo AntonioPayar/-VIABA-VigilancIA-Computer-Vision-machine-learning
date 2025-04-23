@@ -28,3 +28,8 @@ h5py
 onnx
 onnxruntime
 onnx-simplifier
+
+#Caras
+insightface
+faiss-gpu
+#faiss-cpu

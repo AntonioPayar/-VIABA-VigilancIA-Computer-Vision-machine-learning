@@ -3,5 +3,6 @@ __pycache__
 /Tracking_Tests/videos
 /FineTuning/RWF-2000
 yolov5s.pt
-VigilancIA_FastAPI/src/ByteTrack
-VigilancIA_FastAPI/src/datos_camaras.json
+VigilancIA_FastAPI/src/files/datos_camaras.json
+VigilancIA_FastAPI/src/files/index_insight.faiss
+VigilancIA_FastAPI/src/files/caras_insight.db
