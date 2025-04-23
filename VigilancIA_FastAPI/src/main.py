@@ -36,7 +36,6 @@ CONFIGURATION = None
 def read_root():
     return {"greeting": "Hello world"}
 
-#Test error Github
 # Endpoint para la página de configuración
 # http://127.0.0.1:8000/static/configuration_page.html
 # http://127.0.0.1:8000/static/monitoring_page.html
