@@ -4,6 +4,9 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import base64
 from io import BytesIO
+import insightface
+import faiss
+from sklearn.preprocessing import normalize
 
 # Imports de clases propias
 from classes.Cordenadas_Configuracion import *
@@ -12,17 +15,37 @@ from ByteTrack.yolox.tracker.byte_tracker import BYTETracker
 
 import cv2
 import argparse
+import warnings
+import sqlite3
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 print("Cargando el modelo YOLOv5...")
 YOLO = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
-print("Modelo YOLOv5 cargado.")
+CARAS = insightface.app.FaceAnalysis(
+    name="buffalo_l", providers=["CPUExecutionProvider"]
+)
+CARAS.prepare(ctx_id=0)  # (ctx_id=0 normalmente es tu GPU principal)
+DBV = faiss.read_index("files/index_insight.faiss")  # Cargar índice FAISS y nombres
+
+# Leer base de datos con nombres
+conn = sqlite3.connect("files/caras_insight.db")
+cursor = conn.cursor()
+cursor.execute("SELECT nombre, vector_index FROM personas")
+id_to_name = {row[1]: row[0] for row in cursor.fetchall()}
+conn.close()
+
+print("Modelo YOLOv5 y buffalo_l cargado.")
+
 args = argparse.Namespace(
     track_thresh=0.50,  # Este parámetro define el umbral de confianza para detectar objetos que se van a seguir.
     track_buffer=160,  # Este parámetro define el número de fotogramas que se almacenan en el búfer de seguimiento.
     match_thresh=0.95,  # Este parámetro define el umbral de similitud para asociar detecciones con pistas existentes.
     mot20=False,  # Este parámetro indica si se está utilizando el conjunto de datos MOT20 (Multiple Object Tracking 20).
 )
+
 SORT_TRACKER = BYTETracker(args, frame_rate=40)
+
 COLOR = [
     "red",
     "green",
@@ -136,7 +159,7 @@ def calcularPixelMapaHomografia(camara1: DatosCamaras, camara2: DatosCamaras, x1
 
 
 def comprobar_detecciones(detecciones_trackeadas, x1, y1, x2, y2):
-    tolerancia=5
+    tolerancia = 5
     for dict_persona in detecciones_trackeadas:
         if (
             abs(dict_persona["x1_imagen_original"] - x1) <= tolerancia
@@ -194,7 +217,30 @@ def trackerar_detecciones(people_detections, image_tensor):
     return online_targets
 
 
-def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
+def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
+    # Umbral de distancia (ajustable)
+    threshold = 0.4
+    # Recortar imagen de la persona detectada
+    persona_crop = imagen_bgr[int(y1) : int(y2), int(x1) : int(x2)]
+
+    faces = CARAS.get(persona_crop)
+
+    for face in faces:
+        embedding = face.embedding.astype("float32").reshape(1, -1)
+        embedding = normalize(embedding, axis=1)  # ✅ NORMALIZACIÓN L2
+
+        D, I = DBV.search(embedding, 1)
+
+        print(D, I)
+
+        if D[0][0] < threshold:
+            return id_to_name.get(I[0][0], "Desconocido")
+        else:
+            return "Desconocido"
+    return "Desconocido"
+
+
+def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor, img_bgr):
     # Realizamos la inferencia
     results = YOLO(image_tensor)
     # Obtener las bounding boxes, clases y scores
@@ -213,6 +259,14 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
             x2, y2 = x1 + tlwh[2], y1 + tlwh[3]
             track_id = t.track_id
 
+            name = reconocimiento_caras(
+                imagen_bgr=img_bgr,
+                x1=max(0, x1),
+                y1=max(0, y1),
+                x2=min(img_bgr.shape[1], x2),
+                y2=min(img_bgr.shape[0], y2),
+            )
+
             lower_left = calcularPixelMapaHomografia(camara1, camara2, x1, y2)
             lower_right = calcularPixelMapaHomografia(camara1, camara2, x2, y2)
 
@@ -224,7 +278,7 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor):
             LISTAS_PERSONAS[int(track_id)] = (
                 persona_detectada  # Guardamos la persona en el diccionario
             )
-            print(f"ID: {track_id}, Color: {color}")
+            print(f"ID: {track_id}, Color: {color}, Nombre: {name}")
 
             detecciones_trackeadas.append(persona_detectada.__dict__)
             print(len(detecciones_trackeadas))
