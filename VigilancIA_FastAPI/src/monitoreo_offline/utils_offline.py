@@ -167,7 +167,7 @@ def comprobar_detecciones(detecciones_trackeadas, x1, y1, x2, y2):
             and abs(dict_persona["x2_imagen_original"] - x2) <= tolerancia
             and abs(dict_persona["y2_imagen_original"] - y2) <= tolerancia
         ):
-            return dict_persona["color"], dict_persona["clase"]
+            return dict_persona["color"], dict_persona["nombre"]
     return "red", "None"  # Color por defecto si no se encuentra coincidencia
 
 
@@ -218,6 +218,7 @@ def trackerar_detecciones(people_detections, image_tensor):
 
 
 def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
+    print("Reconociendo...")
     # Umbral de distancia (ajustable)
     threshold = 0.4
     # Recortar imagen de la persona detectada
@@ -259,26 +260,33 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor, i
             x2, y2 = x1 + tlwh[2], y1 + tlwh[3]
             track_id = t.track_id
 
-            name = reconocimiento_caras(
-                imagen_bgr=img_bgr,
-                x1=max(0, x1),
-                y1=max(0, y1),
-                x2=min(img_bgr.shape[1], x2),
-                y2=min(img_bgr.shape[0], y2),
-            )
-
             lower_left = calcularPixelMapaHomografia(camara1, camara2, x1, y2)
             lower_right = calcularPixelMapaHomografia(camara1, camara2, x2, y2)
 
             color = COLOR[int(track_id) % len(COLOR)]
-
+            
+            # Creamos la persona detectada
             persona_detectada = Persona(
                 int(track_id), 1.0, color, lower_right, lower_left, x1, y1, x2, y2
             )
+
+            # Comprobamos si la persona ya ha sido detectada
+            if LISTAS_PERSONAS.get(int(track_id)) is None:
+                name = reconocimiento_caras(
+                    imagen_bgr=img_bgr,
+                    x1=max(0, x1),
+                    y1=max(0, y1),
+                    x2=min(img_bgr.shape[1], x2),
+                    y2=min(img_bgr.shape[0], y2),
+                )
+                persona_detectada.setNombre(name)
+            else:
+                persona_detectada.setNombre(LISTAS_PERSONAS[int(track_id)].nombre)
+
             LISTAS_PERSONAS[int(track_id)] = (
                 persona_detectada  # Guardamos la persona en el diccionario
             )
-            print(f"ID: {track_id}, Color: {color}, Nombre: {name}")
+            print(f"ID: {track_id}, Color: {color}, Nombre: {persona_detectada.nombre}")
 
             detecciones_trackeadas.append(persona_detectada.__dict__)
             print(len(detecciones_trackeadas))
