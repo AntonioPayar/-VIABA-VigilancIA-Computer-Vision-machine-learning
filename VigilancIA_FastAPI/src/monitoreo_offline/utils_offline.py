@@ -4,47 +4,21 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import base64
 from io import BytesIO
-import insightface
-import faiss
-from sklearn.preprocessing import normalize
 
 # Imports de clases propias
 from classes.Cordenadas_Configuracion import *
 from classes.Clases_Detecciones import Persona
-from ByteTrack.yolox.tracker.byte_tracker import BYTETracker
+from monitoreo_offline.logic_people_detection import *
 
 import cv2
-import argparse
 import warnings
-import sqlite3
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 print("Cargando el modelo YOLOv5...")
 YOLO = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
-CARAS = insightface.app.FaceAnalysis(
-    name="buffalo_l", providers=["CPUExecutionProvider"]
-)
-CARAS.prepare(ctx_id=0)  # (ctx_id=0 normalmente es tu GPU principal)
-DBV = faiss.read_index("files/index_insight.faiss")  # Cargar índice FAISS y nombres
+print("Modelo YOLOv5 cargado")
 
-# Leer base de datos con nombres
-conn = sqlite3.connect("files/caras_insight.db")
-cursor = conn.cursor()
-cursor.execute("SELECT nombre, vector_index FROM personas")
-id_to_name = {row[1]: row[0] for row in cursor.fetchall()}
-conn.close()
-
-print("Modelo YOLOv5 y buffalo_l cargado.")
-
-args = argparse.Namespace(
-    track_thresh=0.50,  # Este parámetro define el umbral de confianza para detectar objetos que se van a seguir.
-    track_buffer=160,  # Este parámetro define el número de fotogramas que se almacenan en el búfer de seguimiento.
-    match_thresh=0.95,  # Este parámetro define el umbral de similitud para asociar detecciones con pistas existentes.
-    mot20=False,  # Este parámetro indica si se está utilizando el conjunto de datos MOT20 (Multiple Object Tracking 20).
-)
-
-SORT_TRACKER = BYTETracker(args, frame_rate=40)
 
 COLOR = [
     "red",
@@ -158,19 +132,6 @@ def calcularPixelMapaHomografia(camara1: DatosCamaras, camara2: DatosCamaras, x1
     return {"x": round(new_x), "y": round(new_y)}
 
 
-def comprobar_detecciones(detecciones_trackeadas, x1, y1, x2, y2):
-    tolerancia = 5
-    for dict_persona in detecciones_trackeadas:
-        if (
-            abs(dict_persona["x1_imagen_original"] - x1) <= tolerancia
-            and abs(dict_persona["y1_imagen_original"] - y1) <= tolerancia
-            and abs(dict_persona["x2_imagen_original"] - x2) <= tolerancia
-            and abs(dict_persona["y2_imagen_original"] - y2) <= tolerancia
-        ):
-            return dict_persona["color"], dict_persona["nombre"]
-    return "red", "None"  # Color por defecto si no se encuentra coincidencia
-
-
 def imagen_bounding_boxes(image_tensor, detecciones_trackeadas, detections=None):
     """
     Dibuja bounding boxes en la imagen y la convierte a Base64.
@@ -203,42 +164,50 @@ def imagen_bounding_boxes(image_tensor, detecciones_trackeadas, detections=None)
     return base64.b64encode(buffered.getvalue()).decode()
 
 
-def trackerar_detecciones(people_detections, image_tensor):
-    # Convertir detecciones a formato esperado por ByteTrack: [x1, y1, x2, y2, score]
-    dets_for_tracker = people_detections[
-        ["xmin", "ymin", "xmax", "ymax", "confidence"]
-    ].to_numpy()
-    # ByteTrack requiere info de tamaño de imagen: (alto, ancho)
-    image_height, image_width = image_tensor.shape[1:3]  # tensor shape: [C, H, W]
-    # Aplicar tracker de ByteTrack
-    online_targets = SORT_TRACKER.update(
-        dets_for_tracker, [image_height, image_width], (image_height, image_width)
-    )
-    return online_targets
+def procesamiento_deteccion_personas(
+    people_detections, image_tensor, camara1, camara2, img_bgr
+):
+    detecciones_trackeadas = []
+    # Aplicar el tracker
+    tracked_objects = trackerar_detecciones(people_detections, image_tensor)
 
+    for t in tracked_objects:
+        tlwh = t.tlwh  # [x, y, w, h]
+        x1, y1 = tlwh[0], tlwh[1]
+        x2, y2 = x1 + tlwh[2], y1 + tlwh[3]
+        track_id = t.track_id
 
-def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
-    print("Reconociendo...")
-    # Umbral de distancia (ajustable)
-    threshold = 0.4
-    # Recortar imagen de la persona detectada
-    persona_crop = imagen_bgr[int(y1) : int(y2), int(x1) : int(x2)]
+        lower_left = calcularPixelMapaHomografia(camara1, camara2, x1, y2)
+        lower_right = calcularPixelMapaHomografia(camara1, camara2, x2, y2)
 
-    faces = CARAS.get(persona_crop)
+        color = COLOR[int(track_id) % len(COLOR)]
 
-    for face in faces:
-        embedding = face.embedding.astype("float32").reshape(1, -1)
-        embedding = normalize(embedding, axis=1)  # ✅ NORMALIZACIÓN L2
+        # Creamos la persona detectada
+        persona_detectada = Persona(
+            int(track_id), 1.0, color, lower_right, lower_left, x1, y1, x2, y2
+        )
 
-        D, I = DBV.search(embedding, 1)
-
-        print(D, I)
-
-        if D[0][0] < threshold:
-            return id_to_name.get(I[0][0], "Desconocido")
+        # Comprobamos si la persona ya ha sido detectada
+        if LISTAS_PERSONAS.get(int(track_id)) is None:
+            name = reconocimiento_caras(
+                imagen_bgr=img_bgr,
+                x1=max(0, x1),
+                y1=max(0, y1),
+                x2=min(img_bgr.shape[1], x2),
+                y2=min(img_bgr.shape[0], y2),
+            )
+            persona_detectada.setNombre(name)
         else:
-            return "Desconocido"
-    return "Desconocido"
+            persona_detectada.setNombre(LISTAS_PERSONAS[int(track_id)].nombre)
+
+        LISTAS_PERSONAS[int(track_id)] = (
+            persona_detectada  # Guardamos la persona en el diccionario
+        )
+        print(f"ID: {track_id}, Color: {color}, Nombre: {persona_detectada.nombre}")
+
+        detecciones_trackeadas.append(persona_detectada.__dict__)
+
+    return detecciones_trackeadas
 
 
 def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor, img_bgr):
@@ -249,51 +218,15 @@ def detect_objects(camara1: DatosCamaras, camara2: DatosCamaras, image_tensor, i
     # Filtrar solo las detecciones de la clase "persona" (class == 0)
     people_detections = detections[detections["class"] == 0]
 
-    detecciones_trackeadas = []
+    personas_trackeadas = []
     if not people_detections.empty:
-        # Aplicar el tracker
-        tracked_objects = trackerar_detecciones(people_detections, image_tensor)
-
-        for t in tracked_objects:
-            tlwh = t.tlwh  # [x, y, w, h]
-            x1, y1 = tlwh[0], tlwh[1]
-            x2, y2 = x1 + tlwh[2], y1 + tlwh[3]
-            track_id = t.track_id
-
-            lower_left = calcularPixelMapaHomografia(camara1, camara2, x1, y2)
-            lower_right = calcularPixelMapaHomografia(camara1, camara2, x2, y2)
-
-            color = COLOR[int(track_id) % len(COLOR)]
-            
-            # Creamos la persona detectada
-            persona_detectada = Persona(
-                int(track_id), 1.0, color, lower_right, lower_left, x1, y1, x2, y2
-            )
-
-            # Comprobamos si la persona ya ha sido detectada
-            if LISTAS_PERSONAS.get(int(track_id)) is None:
-                name = reconocimiento_caras(
-                    imagen_bgr=img_bgr,
-                    x1=max(0, x1),
-                    y1=max(0, y1),
-                    x2=min(img_bgr.shape[1], x2),
-                    y2=min(img_bgr.shape[0], y2),
-                )
-                persona_detectada.setNombre(name)
-            else:
-                persona_detectada.setNombre(LISTAS_PERSONAS[int(track_id)].nombre)
-
-            LISTAS_PERSONAS[int(track_id)] = (
-                persona_detectada  # Guardamos la persona en el diccionario
-            )
-            print(f"ID: {track_id}, Color: {color}, Nombre: {persona_detectada.nombre}")
-
-            detecciones_trackeadas.append(persona_detectada.__dict__)
-            print(len(detecciones_trackeadas))
+        personas_trackeadas = procesamiento_deteccion_personas(
+            people_detections, image_tensor, camara1, camara2, img_bgr
+        )
 
     # Obtenemos la imagen con bounding boxes
     image_bounding = imagen_bounding_boxes(
-        image_tensor, detecciones_trackeadas, people_detections
+        image_tensor, personas_trackeadas, people_detections
     )
 
-    return detecciones_trackeadas, image_bounding
+    return personas_trackeadas, image_bounding
