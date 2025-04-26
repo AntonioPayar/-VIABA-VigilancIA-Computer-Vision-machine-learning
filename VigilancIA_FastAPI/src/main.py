@@ -36,6 +36,7 @@ CONFIGURATION = None
 def read_root():
     return {"greeting": "Hello world"}
 
+
 # Endpoint para la página de configuración
 # http://127.0.0.1:8000/static/configuration_page.html
 # http://127.0.0.1:8000/static/monitoring_page.html
@@ -80,9 +81,13 @@ async def recibir_frame_camara01(data: ImagenBase64):
         CONFIGURATION = cargar_datos("files/datos_camaras.json")
 
     # Detectar objetos en la imagen
-    bounding_boxes, image_bounding = detect_objects(
+    bounding_boxes, bounding_boxes_coches, image_bounding = detect_objects(
         CONFIGURATION.camara1, CONFIGURATION.camara2, np_array, img_bgr
     )
     return JSONResponse(
-        content={"bounding_boxes": bounding_boxes, "image_bounding": image_bounding}
+        content={
+            "bounding_boxes": bounding_boxes,
+            "image_bounding": image_bounding,
+            "bounding_boxes_coches": bounding_boxes_coches,
+        },
     )
