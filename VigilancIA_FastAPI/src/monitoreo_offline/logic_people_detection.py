@@ -4,6 +4,10 @@ import sqlite3
 from sklearn.preprocessing import normalize
 import argparse
 
+import cv2
+import os
+import numpy as np
+
 from ByteTrack.yolox.tracker.byte_tracker import BYTETracker
 
 args = argparse.Namespace(
@@ -58,14 +62,42 @@ def trackerar_detecciones(people_detections, image_tensor):
     return online_targets
 
 
+def guardar_cara(imagen_cara):
+    # Crear carpeta si no existe
+    carpeta = "caras_guardadas"
+    if not os.path.exists(carpeta):
+        os.makedirs(carpeta)
+
+    # Crear un número aleatorio
+    numero_random = np.random.randint(10000, 99999)
+    nombre_archivo = os.path.join(carpeta, f"cara_{numero_random}.jpg")
+
+    # Guardar la imagen
+    cv2.imwrite(nombre_archivo, imagen_cara)
+    print(f"Cara guardada en: {nombre_archivo}")
+
+
+def ajustar_imagen_cara(img_bgr, x1, y1, x2, y2):
+    margen = 0.3  # Margen de expansión (20%)
+    altura, anchura = img_bgr.shape[:2]
+
+    # Ajustar el y1 hacia arriba
+    desplazamiento = int((y2 - y1) * margen)
+    y1_des = max(0, y1 - desplazamiento)  # Evitar que se salga de la imagen
+
+    return x1, y1_des, x2, y1
+
+
 def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
     print("Reconociendo...")
-    # Umbral de distancia (ajustable)
-    threshold = 0.4
-    # Recortar imagen de la persona detectada
-    persona_crop = imagen_bgr[int(y1) : int(y2), int(x1) : int(x2)]
+    threshold = 0.4  # Umbral de distancia de similitud
 
-    faces = CARAS.get(persona_crop)
+    # Recortar imagen de la persona detectada
+    cara = imagen_bgr[y1:y2, x1:x2]
+
+    guardar_cara(cara)
+
+    faces = CARAS.get(cara)
 
     for face in faces:
         embedding = face.embedding.astype("float32").reshape(1, -1)
@@ -77,6 +109,7 @@ def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
 
         if D[0][0] < threshold:
             nombre = id_to_name.get(I[0][0], "Desconocido")
+            print(f"Nombre encontrado: {nombre}")
             return nombre
         else:
             return "Desconocido"
