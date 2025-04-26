@@ -30,7 +30,7 @@ conn.close()
 print("Modelo buffalo_l cargado")
 
 
-def comprobar_detecciones(detecciones_trackeadas, x1, y1, x2, y2):
+def comprobar_detecciones_personas(detecciones_trackeadas, x1, y1, x2, y2):
     tolerancia = 5
     for dict_persona in detecciones_trackeadas:
         if (
@@ -76,7 +76,8 @@ def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
         print(D, I)
 
         if D[0][0] < threshold:
-            return id_to_name.get(I[0][0], "Desconocido")
+            nombre = id_to_name.get(I[0][0], "Desconocido")
+            return nombre
         else:
             return "Desconocido"
     return "Desconocido"
