@@ -169,6 +169,8 @@ def imagen_bounding_boxes(
 def procesamiento_deteccion_personas(
     people_detections, image_tensor, camara1, camara2, img_bgr
 ):
+    max_frames_reconocimiento = 1000
+    contador = 0
     detecciones_trackeadas = []
     # Aplicar el tracker
     tracked_objects = trackerar_detecciones(people_detections, image_tensor)
@@ -178,6 +180,16 @@ def procesamiento_deteccion_personas(
         x1, y1 = tlwh[0], tlwh[1]
         x2, y2 = x1 + tlwh[2], y1 + tlwh[3]
         track_id = t.track_id
+
+        row = people_detections.iloc[contador]
+        # Obtener las coordenadas
+        x1_cara, y1_cara, x2_cara, y2_cara = ajustar_imagen_cara(
+            image_tensor,
+            int(row["xmin"]),
+            int(row["ymin"]),
+            int(row["xmax"]),
+            int(row["ymax"]),
+        )
 
         lower_left = calcularPixelMapaHomografia(camara1, camara2, x1, y2)
         lower_right = calcularPixelMapaHomografia(camara1, camara2, x2, y2)
@@ -190,23 +202,42 @@ def procesamiento_deteccion_personas(
         )
 
         # Comprobamos si la persona ya ha sido detectada
-        if LISTAS_PERSONAS.get(int(track_id)) is None:
+        persona_encontrada = LISTAS_PERSONAS.get(int(track_id))
+        if persona_encontrada is None:
             name = reconocimiento_caras(
                 imagen_bgr=img_bgr,
-                x1=max(0, x1),
-                y1=max(0, y1),
-                x2=min(img_bgr.shape[1], x2),
-                y2=min(img_bgr.shape[0], y2),
+                x1=x1_cara,
+                y1=y1_cara,
+                x2=x2_cara,
+                y2=y2_cara,
             )
             persona_detectada.setNombre(name)
         else:
+            if (
+                persona_encontrada.nombre == "Desconocido"
+                and persona_encontrada.contador % max_frames_reconocimiento == 0
+            ):
+                print("HOLASSDASODINAOFUNDUJIFNISDUGBNISUDGFB")
+                # Si la persona ya fue detectada pero no se le ha asignado un nombre
+                name = reconocimiento_caras(
+                    imagen_bgr=img_bgr,
+                    x1=x1_cara,
+                    y1=y1_cara,
+                    x2=x2_cara,
+                    y2=y2_cara,
+                )
+                persona_detectada.setNombre(name)
+
+            persona_detectada.setContador(LISTAS_PERSONAS[int(track_id)].contador)
             persona_detectada.setNombre(LISTAS_PERSONAS[int(track_id)].nombre)
 
         LISTAS_PERSONAS[int(track_id)] = (
             persona_detectada  # Guardamos la persona en el diccionario
         )
-        print(f"ID: {track_id}, Color: {color}, Nombre: {persona_detectada.nombre}")
-
+        print(
+            f"ID: {track_id}, Color: {color}, Nombre: {persona_detectada.nombre}, Contador: {persona_detectada.contador}"
+        )
+        contador += 1
         detecciones_trackeadas.append(persona_detectada.__dict__)
 
     return detecciones_trackeadas
