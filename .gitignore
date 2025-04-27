@@ -3,6 +3,8 @@ __pycache__
 /Tracking_Tests/videos
 /FineTuning/RWF-2000
 yolov5s.pt
+license_plate_detector.pt
+VigilancIA_FastAPI/src/files/license_plate_detector
 VigilancIA_FastAPI/src/files/datos_camaras.json
 VigilancIA_FastAPI/src/files/index_insight.faiss
 VigilancIA_FastAPI/src/files/caras_insight.db
