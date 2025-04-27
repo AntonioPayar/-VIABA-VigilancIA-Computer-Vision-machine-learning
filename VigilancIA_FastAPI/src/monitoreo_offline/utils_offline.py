@@ -246,6 +246,7 @@ def procesamiento_deteccion_personas(
 def procesamiento_deteccion_coches(
     coches_detections, image_tensor, camara1, camara2, img_bgr
 ):
+    max_frames_reconocimiento = 100
     detecciones_trackeadas = []
     # Aplicar el tracker
     tracked_objects = trackerar_detecciones(coches_detections, image_tensor)
@@ -267,16 +268,26 @@ def procesamiento_deteccion_coches(
         )
 
         # Comprobamos si la persona ya ha sido detectada
-        if LISTAS_VEHICULOS.get(int(track_id)) is None:
+        coche_encontrado = LISTAS_VEHICULOS.get(int(track_id))
+        if coche_encontrado is None:
             # Reconocimiento de matriculas
-            vehiculo_detectado.setMatricula("111111")
+            vehiculo_detectado.setMatricula(detectar_matricula(img_bgr))
         else:
+            if (
+                coche_encontrado.matricula == "Desconocido"
+                and coche_encontrado.contador % max_frames_reconocimiento == 0
+            ):
+                vehiculo_detectado.setMatricula(detectar_matricula(img_bgr))
+
+            vehiculo_detectado.setContador(LISTAS_VEHICULOS[int(track_id)].contador)
             vehiculo_detectado.setMatricula(LISTAS_VEHICULOS[int(track_id)].matricula)
 
-        # Guardar el vehículo en el diccionario global si fuera necesario
+        # Guardar el vehículo en el diccionario global
         LISTAS_VEHICULOS[int(track_id)] = vehiculo_detectado
 
-        print(f"Vehículo ID: {track_id}, Color: {color}")
+        print(
+            f"Vehículo ID: {track_id}, Matricula: {vehiculo_detectado.matricula}, Contador: {vehiculo_detectado.contador}"
+        )
 
         detecciones_trackeadas.append(vehiculo_detectado.__dict__)
 
