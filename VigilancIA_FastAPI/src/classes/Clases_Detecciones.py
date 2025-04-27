@@ -37,6 +37,15 @@ class Vehiculo:
         self.y1_imagen_original = y1
         self.x2_imagen_original = x2
         self.y2_imagen_original = y2
+        self.contador = 0
+        self.sumaContador()
+
+    def sumaContador(self):
+        self.contador = self.contador + 1
 
     def setMatricula(self, matricula):
         self.matricula = matricula
+        self.sumaContador()
+
+    def setContador(self, contador):
+        self.contador = contador

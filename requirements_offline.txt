@@ -33,3 +33,6 @@ onnx-simplifier
 insightface
 faiss-gpu
 #faiss-cpu
+
+#Matizulas
+easyocr
