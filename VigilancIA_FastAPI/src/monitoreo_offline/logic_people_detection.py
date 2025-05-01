@@ -5,6 +5,7 @@ from sklearn.preprocessing import normalize
 import argparse
 
 import cv2
+import base64
 import os
 import numpy as np
 
@@ -64,7 +65,7 @@ def trackerar_detecciones(people_detections, image_tensor):
 
 def guardar_cara(imagen_cara):
     # Crear carpeta si no existe
-    carpeta = "caras_guardadas"
+    carpeta = "files/caras_guardadas"
     if not os.path.exists(carpeta):
         os.makedirs(carpeta)
 
@@ -95,6 +96,8 @@ def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
     # Recortar imagen de la persona detectada
     cara = imagen_bgr[y1:y2, x1:x2]
 
+    # Codificar la imagen en memoria como JPEG
+    _, buffer = cv2.imencode(".jpg", cara)
     guardar_cara(cara)
 
     faces = CARAS.get(cara)
@@ -110,7 +113,7 @@ def reconocimiento_caras(imagen_bgr, x1, y1, x2, y2):
         if D[0][0] < threshold:
             nombre = id_to_name.get(I[0][0], "Desconocido")
             print(f"Nombre encontrado: {nombre}")
-            return nombre
+            return nombre, base64.b64encode(buffer).decode("utf-8")
         else:
-            return "Desconocido"
-    return "Desconocido"
+            return "Desconocido", base64.b64encode(buffer).decode("utf-8")
+    return "Desconocido", base64.b64encode(buffer).decode("utf-8")

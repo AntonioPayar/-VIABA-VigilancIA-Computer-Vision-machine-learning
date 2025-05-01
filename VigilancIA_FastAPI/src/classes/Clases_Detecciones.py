@@ -11,7 +11,7 @@ class Persona:
         self.x2_imagen_original = x2
         self.y2_imagen_original = y2
         self.contador = 0
-        self.img_cara = None
+        self.caraBase64 = None
         self.sumaContador()
 
     def sumaContador(self):
@@ -23,6 +23,14 @@ class Persona:
 
     def setContador(self, contador):
         self.contador = contador
+
+    def setCaraBase64(self, img_cara):
+        self.caraBase64 = img_cara
+
+    def actualizarPersona(self, persona_antigua):
+        self.contador = persona_antigua.contador
+        self.setNombre(persona_antigua.nombre)
+        self.caraBase64 = persona_antigua.caraBase64
 
 
 class Vehiculo:
@@ -38,6 +46,7 @@ class Vehiculo:
         self.x2_imagen_original = x2
         self.y2_imagen_original = y2
         self.contador = 0
+        self.MatriculaBase64 = None
         self.sumaContador()
 
     def sumaContador(self):
@@ -49,3 +58,11 @@ class Vehiculo:
 
     def setContador(self, contador):
         self.contador = contador
+
+    def setMatricula64(self, img_cara):
+        self.MatriculaBase64 = img_cara
+
+    def actualizarVehiculo(self, coche_antiguo):
+        self.contador = coche_antiguo.contador
+        self.setMatricula(coche_antiguo.matricula)
+        self.MatriculaBase64 = coche_antiguo.MatriculaBase64

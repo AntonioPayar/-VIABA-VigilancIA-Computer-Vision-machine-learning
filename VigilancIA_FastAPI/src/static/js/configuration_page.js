@@ -145,6 +145,10 @@ function pintarPunto(cameraId, x, y, color = "blue") {
   container.appendChild(marker);
 }
 
+function cambiarPage() {
+  window.location.replace("monitoring_page.html");
+}
+
 function verificarYEnviar() {
   const datos = {
     camara1: {
@@ -212,7 +216,6 @@ function verificarYEnviar() {
   // Si todas las celdas tienen valores válidos, llamar a la función para enviar los datos
   enviarResultados(datos, url);
   alert("Datos enviados correctamente.");
-  window.location.replace("monitoring_page.html");
 }
 
 async function enviarResultados(datos, url) {
