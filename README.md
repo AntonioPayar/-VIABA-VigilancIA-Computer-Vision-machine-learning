@@ -6,7 +6,7 @@
 
 ![img](https://theaisummer.com/static/32bde05b2ffccf127b8a89d76dddb57d/eea4a/yolo_app.jpg)
 
-![GIF en línea](https://miro.medium.com/v2/resize:fit:1384/1*oAdmPo7ZxjkfcmTtOqbw1g.gif)
+![GIF en línea](imgs/bounding.gif)
 
 <h1 style="text-align: center;">Forma de Trabajar</h1>
 
@@ -38,12 +38,8 @@ pip install -r requirements_offline.txt
 
 #Instalar ByteTrack (!DENTRO DEL PROYECTO!)
 cd VigilancIA_FastAPI/src/
-git clone https://github.com/ifzhang/ByteTrack.git
-cd VigilancIA_FastAPI/src/ByteTrack
-pip install -v -e .
 
-#Salir ejecutar FastAPI
-cd..
+#Ejecutar FastAPI
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ```

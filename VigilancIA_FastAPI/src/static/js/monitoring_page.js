@@ -47,16 +47,20 @@ function posicionarMapa(context, boundingBoxes) {
       let last_point;
       if (!personas[deteccion.track_id]) {
         contador_personas++;
+
         persona = new Persona(
           deteccion.track_id,
-          deteccion.clase,
+          deteccion.nombre,
           deteccion.color,
           obtenerHoraActual(),
-          contador_personas
+          contador_personas,
+          deteccion.caraBase64
         );
+
         last_point = { x: null, y: null };
       } else {
         persona = personas[deteccion.track_id];
+        persona.setcaraBase64(deteccion.caraBase64);
         last_point = persona.ultimo_punto;
       }
 
@@ -95,14 +99,16 @@ function posicionarMapaCoche(context, boundingBoxes) {
         contador_coches++;
         coche = new Coche(
           deteccion.track_id,
-          deteccion.clase,
+          deteccion.matricula,
           deteccion.color,
           obtenerHoraActual(),
-          contador_coches
+          contador_coches,
+          deteccion.MatriculaBase64
         );
         last_point = { x: null, y: null };
       } else {
         coche = coches[deteccion.track_id];
+        coche.setMatriculaBase64(deteccion.MatriculaBase64);
         last_point = coche.ultimo_punto;
       }
 

@@ -1,7 +1,7 @@
 // personas.js
 
 export class Persona {
-  constructor(id, nombre, color, hora_detectada, contador) {
+  constructor(id, nombre, color, hora_detectada, contador, caraBase64) {
     this.id = id;
     this.nombre = nombre;
     this.color = color;
@@ -10,10 +10,15 @@ export class Persona {
     this.contador = contador;
     this.lista_de_puntos_creados = [];
     this.lista_de_lineas_creadas = [];
+    this.caraBase64 = caraBase64;
   }
 
   setUltimoPunto(x, y) {
     this.ultimo_punto = { x, y };
+  }
+
+  setcaraBase64(caraBase64) {
+    this.caraBase64 = caraBase64;
   }
 
   agregarPunto(marker) {
@@ -61,9 +66,13 @@ export function agregarPersonaATabla(persona) {
   if (filaExistente) {
     // Actualizar la fila existente con la nueva información
     filaExistente.querySelector("td:nth-child(1)").textContent = persona.nombre;
-    filaExistente.querySelector("td:nth-child(2)").textContent =
+    filaExistente.querySelector("td:nth-child(2) button").onclick =
+      function () {
+        mostrarImagen(persona.caraBase64);
+      };
+    filaExistente.querySelector("td:nth-child(3)").textContent =
       persona.hora_detectada;
-    filaExistente.querySelector("td:nth-child(3)").textContent = persona.color;
+    filaExistente.querySelector("td:nth-child(4)").textContent = persona.color;
     return;
   }
 
@@ -74,15 +83,18 @@ export function agregarPersonaATabla(persona) {
     const filaAntigua = filas[1];
     filaAntigua.setAttribute("id", `persona-fila-${persona.id}`);
     filaAntigua.querySelector("td:nth-child(1)").textContent = persona.nombre;
-    filaAntigua.querySelector("td:nth-child(2)").textContent =
+    filaAntigua.querySelector("td:nth-child(2) button").onclick = function () {
+      mostrarImagen(persona.caraBase64);
+    };
+    filaAntigua.querySelector("td:nth-child(3)").textContent =
       persona.hora_detectada;
-    filaAntigua.querySelector("td:nth-child(3)").textContent = persona.color;
+    filaAntigua.querySelector("td:nth-child(4)").textContent = persona.color;
 
     // Actualizar el botón de eliminar para la nueva persona
-    const botonEliminar = filaAntigua.querySelector("td:nth-child(4) button");
+    const botonEliminar = filaAntigua.querySelector("td:nth-child(5) button");
     botonEliminar.onclick = function () {
-      ocultarTracking(persona); // Llamar a la función para ocultar tracking
-      filaAntigua.remove(); // Eliminar la fila de la tabla
+      ocultarTracking(persona);
+      filaAntigua.remove();
     };
     return;
   }
@@ -94,6 +106,14 @@ export function agregarPersonaATabla(persona) {
   const celdaNombre = document.createElement("td");
   celdaNombre.textContent = persona.nombre;
 
+  const celdaImagen = document.createElement("td");
+  const botonImagen = document.createElement("button");
+  botonImagen.textContent = "Ver Imagen";
+  botonImagen.onclick = function () {
+    mostrarImagen(persona.caraBase64);
+  };
+  celdaImagen.appendChild(botonImagen);
+
   const celdaHora = document.createElement("td");
   celdaHora.textContent = persona.hora_detectada;
 
@@ -104,15 +124,27 @@ export function agregarPersonaATabla(persona) {
   const botonEliminar = document.createElement("button");
   botonEliminar.textContent = "Eliminar Tracking";
   botonEliminar.onclick = function () {
-    ocultarTracking(persona); // Llamar a la función para ocultar tracking
-    fila.remove(); // Eliminar la fila de la tabla
+    ocultarTracking(persona);
+    fila.remove();
   };
   celdaEliminar.appendChild(botonEliminar);
 
   fila.appendChild(celdaNombre);
+  fila.appendChild(celdaImagen);
   fila.appendChild(celdaHora);
   fila.appendChild(celdaColor);
   fila.appendChild(celdaEliminar);
 
   tabla.appendChild(fila);
+}
+
+function mostrarImagen(imagenBase64) {
+  if (imagenBase64) {
+    const nuevaVentana = window.open("", "_blank");
+    nuevaVentana.document.write(
+      `<img src="data:image/jpeg;base64,${imagenBase64}" alt="Imagen de la persona" style="max-width:100%; height:auto;">`
+    );
+  } else {
+    alert("No hay imagen disponible para esta persona.");
+  }
 }

@@ -204,7 +204,7 @@ def procesamiento_deteccion_personas(
         # Comprobamos si la persona ya ha sido detectada
         persona_encontrada = LISTAS_PERSONAS.get(int(track_id))
         if persona_encontrada is None:
-            name = reconocimiento_caras(
+            name, imagen_cara = reconocimiento_caras(
                 imagen_bgr=img_bgr,
                 x1=x1_cara,
                 y1=y1_cara,
@@ -212,6 +212,7 @@ def procesamiento_deteccion_personas(
                 y2=y2_cara,
             )
             persona_detectada.setNombre(name)
+            persona_detectada.setCaraBase64(imagen_cara)
         else:
             if (
                 persona_encontrada.nombre == "Desconocido"
@@ -219,7 +220,7 @@ def procesamiento_deteccion_personas(
             ):
                 print("HOLASSDASODINAOFUNDUJIFNISDUGBNISUDGFB")
                 # Si la persona ya fue detectada pero no se le ha asignado un nombre
-                name = reconocimiento_caras(
+                name, imagen_cara = reconocimiento_caras(
                     imagen_bgr=img_bgr,
                     x1=x1_cara,
                     y1=y1_cara,
@@ -227,9 +228,9 @@ def procesamiento_deteccion_personas(
                     y2=y2_cara,
                 )
                 persona_detectada.setNombre(name)
+                persona_detectada.setCaraBase64(imagen_cara)
 
-            persona_detectada.setContador(LISTAS_PERSONAS[int(track_id)].contador)
-            persona_detectada.setNombre(LISTAS_PERSONAS[int(track_id)].nombre)
+            persona_detectada.actualizarPersona(LISTAS_PERSONAS[int(track_id)])
 
         LISTAS_PERSONAS[int(track_id)] = (
             persona_detectada  # Guardamos la persona en el diccionario
@@ -271,16 +272,19 @@ def procesamiento_deteccion_coches(
         coche_encontrado = LISTAS_VEHICULOS.get(int(track_id))
         if coche_encontrado is None:
             # Reconocimiento de matriculas
-            vehiculo_detectado.setMatricula(detectar_matricula(img_bgr))
+            str_matricula, img_matricula = detectar_matricula(img_bgr)
+            vehiculo_detectado.setMatricula(str_matricula)
+            vehiculo_detectado.setMatricula64(img_matricula)
         else:
             if (
                 coche_encontrado.matricula == "Desconocido"
                 and coche_encontrado.contador % max_frames_reconocimiento == 0
             ):
-                vehiculo_detectado.setMatricula(detectar_matricula(img_bgr))
+                str_matricula, img_matricula = detectar_matricula(img_bgr)
+                vehiculo_detectado.setMatricula(str_matricula)
+                vehiculo_detectado.setMatricula64(img_matricula)
 
-            vehiculo_detectado.setContador(LISTAS_VEHICULOS[int(track_id)].contador)
-            vehiculo_detectado.setMatricula(LISTAS_VEHICULOS[int(track_id)].matricula)
+            vehiculo_detectado.actualizarVehiculo(LISTAS_VEHICULOS[int(track_id)])
 
         # Guardar el vehículo en el diccionario global
         LISTAS_VEHICULOS[int(track_id)] = vehiculo_detectado

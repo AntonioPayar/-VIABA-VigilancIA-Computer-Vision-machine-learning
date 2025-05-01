@@ -1,7 +1,7 @@
 // monitoring_page.js
 
 export class Coche {
-  constructor(id, matricula, color, hora_detectada, contador) {
+  constructor(id, matricula, color, hora_detectada, contador, matriculaBase64) {
     this.id = id;
     this.matricula = matricula;
     this.color = color;
@@ -10,10 +10,15 @@ export class Coche {
     this.contador = contador;
     this.lista_de_puntos_creados = [];
     this.lista_de_lineas_creadas = [];
+    this.MatriculaBase64 = matriculaBase64;
   }
 
   setUltimoPunto(x, y) {
     this.ultimo_punto = { x, y };
+  }
+
+  setMatriculaBase64(caraBase64) {
+    this.MatriculaBase64 = caraBase64;
   }
 
   agregarPunto(marker) {
@@ -59,9 +64,13 @@ export function agregarCocheATabla(coche) {
   if (filaExistente) {
     filaExistente.querySelector("td:nth-child(1)").textContent =
       coche.matricula;
-    filaExistente.querySelector("td:nth-child(2)").textContent =
+    filaExistente.querySelector("td:nth-child(2) button").onclick =
+      function () {
+        mostrarImagen(coche.MatriculaBase64);
+      };
+    filaExistente.querySelector("td:nth-child(3)").textContent =
       coche.hora_detectada;
-    filaExistente.querySelector("td:nth-child(3)").textContent = coche.color;
+    filaExistente.querySelector("td:nth-child(4)").textContent = coche.color;
     return;
   }
 
@@ -71,11 +80,14 @@ export function agregarCocheATabla(coche) {
     const filaAntigua = filas[1];
     filaAntigua.setAttribute("id", `coche-fila-${coche.id}`);
     filaAntigua.querySelector("td:nth-child(1)").textContent = coche.matricula;
-    filaAntigua.querySelector("td:nth-child(2)").textContent =
+    filaAntigua.querySelector("td:nth-child(2) button").onclick = function () {
+      mostrarImagen(coche.MatriculaBase64);
+    };
+    filaAntigua.querySelector("td:nth-child(3)").textContent =
       coche.hora_detectada;
-    filaAntigua.querySelector("td:nth-child(3)").textContent = coche.color;
+    filaAntigua.querySelector("td:nth-child(4)").textContent = coche.color;
 
-    const botonEliminar = filaAntigua.querySelector("td:nth-child(4) button");
+    const botonEliminar = filaAntigua.querySelector("td:nth-child(5) button");
     botonEliminar.onclick = function () {
       ocultarTracking(coche);
       filaAntigua.remove();
@@ -89,6 +101,14 @@ export function agregarCocheATabla(coche) {
 
   const celdaMatricula = document.createElement("td");
   celdaMatricula.textContent = coche.matricula;
+
+  const celdaImagen = document.createElement("td");
+  const botonImagen = document.createElement("button");
+  botonImagen.textContent = "Ver Imagen";
+  botonImagen.onclick = function () {
+    mostrarImagen(coche.MatriculaBase64);
+  };
+  celdaImagen.appendChild(botonImagen);
 
   const celdaHora = document.createElement("td");
   celdaHora.textContent = coche.hora_detectada;
@@ -106,9 +126,21 @@ export function agregarCocheATabla(coche) {
   celdaEliminar.appendChild(botonEliminar);
 
   fila.appendChild(celdaMatricula);
+  fila.appendChild(celdaImagen);
   fila.appendChild(celdaHora);
   fila.appendChild(celdaColor);
   fila.appendChild(celdaEliminar);
 
   tabla.appendChild(fila);
+}
+
+function mostrarImagen(imagenBase64) {
+  if (imagenBase64) {
+    const nuevaVentana = window.open("", "_blank");
+    nuevaVentana.document.write(
+      `<img src="data:image/jpeg;base64,${imagenBase64}" alt="Imagen del coche" style="max-width:100%; height:auto;">`
+    );
+  } else {
+    alert("No hay imagen disponible para este coche.");
+  }
 }
