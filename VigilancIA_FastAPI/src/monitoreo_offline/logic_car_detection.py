@@ -6,6 +6,7 @@ import easyocr
 from ultralytics import YOLO
 import cv2
 import os
+import base64
 
 # Cargar el modelo YOLO a partir del archivo .pt (se asume que ya existe en la ruta)
 YOLO_MATRICULAS = YOLO("files/license_plate_detector.pt")
@@ -28,7 +29,7 @@ def comprobar_detecciones_coches(detecciones_trackeadas, x1, y1, x2, y2):
 
 def guardar_matricula(imagen_matricula):
     # Crear carpeta si no existe
-    carpeta = "matricula_guardadas"
+    carpeta = "files/matricula_guardadas"
     if not os.path.exists(carpeta):
         os.makedirs(carpeta)
 
@@ -79,11 +80,13 @@ def detectar_matricula(image_input):
         img_np = np.array(image)
         # Asegurarse de que las coordenadas sean válidas
         if x1 < 0 or y1 < 0 or x2 > img_np.shape[1] or y2 > img_np.shape[0]:
-            return "Out of bounds"
+            return "Out of bounds", base64.b64encode(buffer).decode("utf-8")
 
         # Recortar la región de interés (ROI) que contiene la matrícula
         roi = img_np[y1:y2, x1:x2]
 
+        # Codificar la imagen en memoria como JPEG
+        _, buffer = cv2.imencode(".jpg", roi)
         guardar_matricula(roi)
         # Aplicar EasyOCR sobre la región recortada
         ocr_result = EASYOCR.readtext(roi)
@@ -92,8 +95,9 @@ def detectar_matricula(image_input):
         if ocr_result:
             # Por ejemplo, tomar el texto con mayor confianza
             matricula = max(ocr_result, key=lambda x: x[2])[1]
-            return matricula
+            return matricula, base64.b64encode(buffer).decode("utf-8")
         else:
-            return "Desconocido"
+            return "Desconocido", base64.b64encode(buffer).decode("utf-8")
     else:
-        return "Desconocido"
+        _, buffer = cv2.imencode(".jpg", np.array(image))
+        return "Desconocido", base64.b64encode(buffer).decode("utf-8")
