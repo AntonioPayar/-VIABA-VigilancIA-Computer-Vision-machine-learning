@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faces-detection-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: faces-detection
+  template:
+    metadata:
+      labels:
+        app: faces-detection
+    spec:
+      containers:
+      - name: mlserver
+        image: aegui/faces-detection-mlserver:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: faces-detection-service
+spec:
+  selector:
+    app: faces-detection
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: NodePort

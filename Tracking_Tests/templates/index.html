@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Object Tracking</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f0f0; margin: 20px; }
+        h1 { text-align: center; color: #333; }
+        #video-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        img {
+            border: 1px solid #ccc;
+            background-color: #000; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Video Tracking Feed</h1>
+    <div id="video-container">
+        <img src="{{ url_for('video_feed') }}" width="80%" alt="Video Stream">
+    </div>
+</body>
+</html>
