@@ -1,8 +1,0 @@
-prefect
-mlflow
-dagshub
-prefect-kubernetes
-prefect-github
-psutil
-opencv-python
-scikit-learn
