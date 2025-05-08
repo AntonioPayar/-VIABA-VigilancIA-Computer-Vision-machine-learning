@@ -1,5 +1,0 @@
-opencv-python
-easyocr
-argparse
-numpy
-ultralytics
